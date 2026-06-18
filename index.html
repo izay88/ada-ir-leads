@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADA-IR Leads Tracker - Emissions Monitoring Prospects</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        * { font-family: 'Inter', sans-serif; }
+        :root {
+            --primary: #1e3a5f;
+            --primary-light: #2d5a8a;
+            --accent: #00b4d8;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+        }
+        body { background: var(--bg); color: var(--text); }
+        .stat-card { background: var(--card); border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid var(--border); }
+        .lead-row { background: var(--card); border-radius: 8px; padding: 1rem; margin-bottom: 0.75rem; box-shadow: 0 1px 2px rgba(0,0,0,0.03); border: 1px solid var(--border); transition: all 0.2s; }
+        .lead-row:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); transform: translateY(-1px); }
+        .lead-row.called { border-left: 4px solid var(--success); opacity: 0.7; }
+        .lead-row.emailed { border-left: 4px solid var(--accent); }
+        .lead-row.meeting { border-left: 4px solid var(--warning); }
+        .lead-row.closed { border-left: 4px solid var(--danger); }
+        .badge { padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+        .badge-primary { background: #dbeafe; color: #1e40af; }
+        .badge-success { background: #d1fae5; color: #065f46; }
+        .badge-warning { background: #fef3c7; color: #92400e; }
+        .badge-danger { background: #fee2e2; color: #991b1b; }
+        .badge-info { background: #e0e7ff; color: #3730a3; }
+        .sector-badge { background: #f1f5f9; color: #475569; }
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15,23,42,0.6); display: none; align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(4px); }
+        .modal { background: var(--card); border-radius: 16px; padding: 2rem; width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+        .note-item { background: #f8fafc; border-radius: 8px; padding: 1rem; margin-bottom: 0.75rem; border: 1px solid var(--border); }
+        .note-item .note-header { display: flex; justify-content: space-between; margin-bottom: 0.5rem; }
+        .note-item .note-type { font-size: 0.7rem; font-weight: 600; padding: 0.125rem 0.5rem; border-radius: 4px; }
+        .note-type-call { background: #d1fae5; color: #065f46; }
+        .note-type-email { background: #dbeafe; color: #1e40af; }
+        .note-type-meeting { background: #fef3c7; color: #92400e; }
+        .note-type-note { background: #f1f5f9; color: #475569; }
+        .reasoning-box { background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 1rem; margin: 1rem 0; }
+        .template-box { background: #fafafa; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1rem; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; line-height: 1.6; white-space: pre-wrap; }
+        .toast { position: fixed; bottom: 2rem; right: 2rem; background: var(--success); color: white; padding: 1rem 1.5rem; border-radius: 8px; box-shadow: 0 4px 20px rgba(16,185,129,0.3); display: none; z-index: 200; animation: slideIn 0.3s ease; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .filter-btn { padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.8rem; font-weight: 500; transition: all 0.2s; }
+        .filter-btn.active { background: var(--primary); color: white; }
+        .filter-btn:not(.active) { background: var(--card); color: var(--text-muted); border: 1px solid var(--border); }
+        .filter-btn:not(.active):hover { background: var(--bg); border-color: var(--primary); color: var(--primary); }
+        .search-input { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem 1rem; width: 100%; transition: all 0.2s; }
+        .search-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,180,216,0.1); }
+    </style>
+</head>
+<body class="min-h-screen">
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-blue-400 flex items-center justify-center">
+                        <i class="fas fa-leaf text-white text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold text-gray-900">ADA-IR Leads Tracker</h1>
+                        <p class="text-sm text-gray-500">Emissions Monitoring Prospects - Malaysia</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="px-3 py-1 text-sm font-medium bg-green-50 text-green-700 rounded-full">
+                        <i class="fas fa-circle text-xs mr-1"></i>Active Tracking
+                    </span>
+                    <button onclick="exportCSV()" class="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition flex items-center gap-2">
+                        <i class="fas fa-download"></i> Export CSV
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Stats Bar -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div class="grid grid-cols-2 sm:grid-cols-5 gap-4">
+            <div class="stat-card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500">Total Leads</p>
+                        <p class="text-2xl font-bold text-gray-900" id="stat-total">20</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
+                        <i class="fas fa-list text-blue-600 text-xl"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500">Contacted</p>
+                        <p class="text-2xl font-bold text-green-600" id="stat-contacted">0</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
+                        <i class="fas fa-phone text-green-600 text-xl"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500">Meetings Set</p>
+                        <p class="text-2xl font-bold text-amber-600" id="stat-meetings">0</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center">
+                        <i class="fas fa-calendar-check text-amber-600 text-xl"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500">Closed Won</p>
+                        <p class="text-2xl font-bold text-red-600" id="stat-closed">0</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center">
+                        <i class="fas fa-handshake text-red-600 text-xl"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500">This Month</p>
+                        <p class="text-2xl font-bold text-purple-600" id="stat-month">10</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center">
+                        <i class="fas fa-calendar-plus text-purple-600 text-xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-4">
+        <div class="flex flex-col sm:flex-row gap-4">
+            <div class="flex-1">
+                <input type="text" id="searchInput" class="search-input" placeholder="Search company, sector, contact person, email..." onkeyup="filterLeads()">
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <button class="filter-btn active" onclick="setFilter('all')">All</button>
+                <button class="filter-btn" onclick="setFilter('new')">New Today</button>
+                <button class="filter-btn" onclick="setFilter('contacted')">Contacted</button>
+                <button class="filter-btn" onclick="setFilter('meeting')">Meetings</button>
+                <button class="filter-btn" onclick="setFilter('pending')">Pending</button>
+                <button class="filter-btn" onclick="openReasoningModal()">Why These Leads?</button>
+                <button class="filter-btn" onclick="openTemplateModal()">Email Template</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leads Table -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                        <th class="pb-2 w-12">Status</th>
+                        <th class="pb-2">Company</th>
+                        <th class="pb-2 hidden md:table-cell">Sector</th>
+                        <th class="pb-2 hidden lg:table-cell">Contact Person</th>
+                        <th class="pb-2 hidden lg:table-cell">Email</th>
+                        <th class="pb-2 hidden md:table-cell">Phone</th>
+                        <th class="pb-2 hidden lg:table-cell">Date Added</th>
+                        <th class="pb-2 w-24">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="leadsTableBody">
+                    <!-- Leads will be injected here by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Reasoning Modal -->
+    <div id="reasoningModal" class="modal-overlay" onclick="if(event.target===this) closeModal('reasoningModal')">
+        <div class="modal">
+            <div class="flex items-start justify-between mb-6">
+                <h2 class="text-xl font-bold text-gray-900">Why These Companies?</h2>
+                <button onclick="closeModal('reasoningModal')" class="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
+            </div>
+            <div class="reasoning-box">
+                <h3 class="font-semibold text-blue-900 mb-2">Target Profile: ADA-IR Emissions Monitoring Solutions</h3>
+                <p class="text-sm text-blue-800 mb-4">ADA-IR provides infrared-based continuous emissions monitoring systems (CEMS) and gas analyzers for industrial compliance with Malaysia's Environmental Quality Act 1974 and DOE regulations.</p>
+            </div>
+            <div class="space-y-3 text-sm">
+                <div class="p-3 bg-white border border-gray-200 rounded-lg">
+                    <span class="font-medium text-gray-900">Heavy Industry & Manufacturing:</span> Cement (CIMA, YTL, Lafarge), Steel (Southern Steel, Ann Joo), Glass (Malaya Glass, Xinyi) - High-temperature processes emitting NOx, SOx, CO, particulates requiring continuous monitoring.
+                </div>
+                <div class="p-3 bg-white border border-gray-200 rounded-lg">
+                    <span class="font-medium text-gray-900">Petrochemicals & Chemicals:</span> Petronas Chemicals, Lotte Chemical, Scientex - Complex gas mixtures, VOCs, flare stack monitoring, process safety compliance.
+                </div>
+                <div class="p-3 bg-white border border-gray-200 rounded-lg">
+                    <span class="font-medium text-gray-900">Palm Oil & Agro-processing:</span> IOI Group, Sime Darby Plantation, QL Resources - Biomass boilers, POME treatment, methane capture, RSPO sustainability compliance.
+                </div>
+                <div class="p-3 bg-white border border-gray-200 rounded-lg">
+                    <span class="font-medium text-gray-900">Food & Beverage:</span> Nestlé, F&N, PPB Group - Steam boilers, refrigeration systems, energy efficiency reporting, ESG commitments.
+                </div>
+                <div class="p-3 bg-white border border-gray-200 rounded-lg">
+                    <span class="font-medium text-gray-900">Automotive & Electronics:</span> UMW/Sime, Inari Amertron - Paint booths (VOCs), soldering fumes, cleanroom compliance, ISO 14001.
+                </div>
+                <div class="p-3 bg-white border border-gray-200 rounded-lg">
+                    <span class="font-medium text-gray-900">Pharmaceuticals:</span> Duopharma - Solvent recovery, cleanroom emissions, GMP environmental monitoring.
+                </div>
+                <div class="p-3 bg-white border border-gray-200 rounded-lg">
+                    <span class="font-medium text-gray-900">Power & Utilities:</span> Genting, Malakoff, Tenaga affiliates - Combustion monitoring, CEMS mandatory for >50MW plants.
+                </div>
+            </div>
+            <div class="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-900">
+                <strong>Key Insight:</strong> Malaysia's DOE increasingly mandates CEMS for Category 1-3 premises. Companies with public ESG commitments (FTSE4Good, Bursa Sustainability) have budget allocation and internal champions for emissions tech upgrades.
+            </div>
+        </div>
+    </div>
+
+    <!-- Email Template Modal -->
+    <div id="templateModal" class="modal-overlay" onclick="if(event.target===this) closeModal('templateModal')">
+        <div class="modal">
+            <div class="flex items-start justify-between mb-6">
+                <h2 class="text-xl font-bold text-gray-900">Outreach Email Templates</h2>
+                <button onclick="closeModal('templateModal')" class="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
+            </div>
+            <div class="space-y-6">
+                <div>
+                    <h3 class="font-semibold text-gray-900 mb-2">Template 1: Cold Outreach - Compliance Focus</h3>
+                    <div class="template-box" id="template1">Subject: Emissions Compliance for [Company] - DOE CEMS Requirements 2025
+
+Dear [Contact Person],
+
+I'm reaching out because [Company]'s [specific operations: cement kilns / palm oil mill / chemical plant / steel furnace] likely fall under DOE's Category 1-3 premises requiring Continuous Emissions Monitoring Systems (CEMS) under the Environmental Quality (Clean Air) Regulations 2014.
+
+ADA-IR specializes in infrared-based CEMS that provide:
+• Real-time NOx, SOx, CO, CO2, O2, particulate monitoring
+• DOE-compliant data logging & automatic reporting
+• 95%+ uptime with remote diagnostics
+• Lower TCO vs. traditional extractive systems
+
+We've helped [similar company/sector] achieve compliance within 8-12 weeks installation.
+
+Are you the right person to discuss your current monitoring setup? I'd value 15 minutes to share how we're helping Malaysian manufacturers stay compliant while reducing operational overhead.
+
+Best regards,
+[Your Name]
+ADA-IR | Continuous Emissions Monitoring Solutions
+[Phone] | [Email] | www.ada-ir.com</div>
+                    <button onclick="copyTemplate('template1')" class="mt-2 px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200">Copy</button>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-gray-900 mb-2">Template 2: ESG / Sustainability Angle</h3>
+                    <div class="template-box" id="template2">Subject: Supporting [Company]'s Net Zero & ESG Reporting with Accurate Emissions Data
+
+Dear [Contact Person],
+
+I noticed [Company]'s commitment to [specific: FTSE4Good / Bursa Sustainability / RSPO / Net Zero 2050] in your latest sustainability report. Accurate, auditable emissions data is the foundation of credible ESG disclosure.
+
+ADA-IR's IR-based continuous monitoring provides:
+• Verified Scope 1 emissions data for GHG reporting
+• Real-time dashboards for stakeholder transparency
+• Integration with existing EMS/SCADA systems
+• Audit-ready reports for external verification
+
+We're working with [peer company] to automate their ESG data pipeline from stack to report.
+
+Would you be open to a brief call on how continuous monitoring can strengthen your sustainability narrative?
+
+Best regards,
+[Your Name]
+ADA-IR | Emissions Monitoring for ESG Excellence</div>
+                    <button onclick="copyTemplate('template2')" class="mt-2 px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200">Copy</button>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-gray-900 mb-2">Template 3: Referral / Warm Introduction</h3>
+                    <div class="template-box" id="template3">Subject: Introduction - Emissions Monitoring for [Company]'s [Plant/Facility]
+
+Dear [Contact Person],
+
+[Referrer name] suggested I reach out regarding your emissions monitoring at [specific plant/facility].
+
+ADA-IR provides DOE-compliant CEMS using non-dispersive infrared (NDIR) and Fourier-transform infrared (FTIR) technology - ideal for [Company]'s [specific process: cement kiln / boiler / flare / incinerator].
+
+Key differentiators:
+• In-situ measurement - no sample conditioning, minimal maintenance
+• Multi-gas capability (up to 12 gases simultaneously)
+• Proven in Malaysian tropical conditions
+- Local support team in KL/Selangor
+
+[Referrer] mentioned you're evaluating options for [upcoming audit / license renewal / capacity expansion].
+
+Can we schedule 20 minutes this week to discuss your requirements?
+
+Best regards,
+[Your Name]
+ADA-IR | [Phone] | www.ada-ir.com</div>
+                    <button onclick="copyTemplate('template3')" class="mt-2 px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200">Copy</button>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-gray-900 mb-2">Template 4: Follow-up After No Response</h3>
+                    <div class="template-box" id="template4">Subject: Re: Emissions Compliance for [Company] - Quick Question
+
+Dear [Contact Person],
+
+Following up on my note below - I understand you're busy.
+
+Quick question: Is [Company] currently using extractive CEMS (with sample conditioning) or in-situ monitoring at your [plant/facility]?
+
+The reason I ask: Many Malaysian facilities are switching to in-situ IR systems to eliminate:
+• Chilled mirror/permeation dryer maintenance
+• Sample line clogging in humid conditions
+• 30-40% lower annual maintenance costs
+
+Happy to share a 1-page comparison if useful. No pressure - just want to ensure you have options before your next DOE audit.
+
+Best,
+[Your Name]
+ADA-IR</div>
+                    <button onclick="copyTemplate('template4')" class="mt-2 px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200">Copy</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lead Detail Modal -->
+    <div id="leadModal" class="modal-overlay" onclick="if(event.target===this) closeModal('leadModal')">
+        <div class="modal">
+            <div class="flex items-start justify-between mb-6">
+                <div>
+                    <h2 class="text-xl font-bold text-gray-900" id="modalCompanyName"></h2>
+                    <p class="text-sm text-gray-500" id="modalSector"></p>
+                </div>
+                <button onclick="closeModal('leadModal')" class="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
+            </div>
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <div class="p-3 bg-gray-50 rounded-lg">
+                    <p class="text-xs text-gray-500">Contact Person</p>
+                    <p class="font-medium" id="modalContact">-</p>
+                </div>
+                <div class="p-3 bg-gray-50 rounded-lg">
+                    <p class="text-xs text-gray-500">Email</p>
+                    <p class="font-medium"><a id="modalEmail" href="#" class="text-blue-600 hover:underline">-</a></p>
+                </div>
+                <div class="p-3 bg-gray-50 rounded-lg">
+                    <p class="text-xs text-gray-500">Phone</p>
+                    <p class="font-medium" id="modalPhone">-</p>
+                </div>
+                <div class="p-3 bg-gray-50 rounded-lg">
+                    <p class="text-xs text-gray-500">Date Added</p>
+                    <p class="font-medium" id="modalDateAdded">-</p>
+                </div>
+                <div class="p-3 bg-gray-50 rounded-lg col-span-2">
+                    <p class="text-xs text-gray-500">Website</p>
+                    <p class="font-medium"><a id="modalWebsite" href="#" target="_blank" class="text-blue-600 hover:underline">-</a></p>
+                </div>
+                <div class="p-3 bg-gray-50 rounded-lg col-span-2">
+                    <p class="text-xs text-gray-500">Address</p>
+                    <p class="font-medium text-sm" id="modalAddress">-</p>
+                </div>
+            </div>
+            <div class="border-t border-gray-200 pt-4 mb-4">
+                <h3 class="font-semibold text-gray-900 mb-3">Activity Log</h3>
+                <div class="flex gap-2 mb-3">
+                    <select id="noteType" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                        <option value="call">📞 Call</option>
+                        <option value="email">✉️ Email</option>
+                        <option value="meeting">🤝 Meeting</option>
+                        <option value="note">📝 Note</option>
+                    </select>
+                    <textarea id="noteText" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm" placeholder="Add notes..."></textarea>
+                    <button onclick="addNote()" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">Add</button>
+                </div>
+                <div id="notesContainer" class="space-y-2 max-h-60 overflow-y-auto"></div>
+            </div>
+            <div class="flex justify-end gap-2 pt-4 border-t border-gray-200">
+                <button onclick="updateLeadStatus('pending')" class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50">Mark Pending</button>
+                <button onclick="updateLeadStatus('contacted')" class="px-4 py-2 bg-green-100 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200">Mark Contacted</button>
+                <button onclick="updateLeadStatus('meeting')" class="px-4 py-2 bg-amber-100 text-amber-700 rounded-lg text-sm font-medium hover:bg-amber-200">Meeting Set</button>
+                <button onclick="updateLeadStatus('closed')" class="px-4 py-2 bg-red-100 text-red-700 rounded-lg text-sm font-medium hover:bg-red-200">Closed Won</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast flex items-center gap-2">
+        <i class="fas fa-check-circle"></i>
+        <span id="toastMessage"></span>
+    </div>
+
+    <!-- Lead Data & Logic -->
+    <script>
+        const leads = [
+            // PREVIOUS LEADS (Date: 2025-06-14)
+            {
+                id: 1,
+                name: "British American Tobacco Malaysia",
+                sector: "Manufacturing - Tobacco",
+                website: "https://www.batmalaysia.com/",
+                contact: "Corporate Affairs",
+                email: "general@batmalaysia.com",
+                phone: "+60 3 2720 8188",
+                address: "Level 19, Guoco Tower, Damansara City, No.6 Jalan Damanlela, Bukit Damansara, 50490 Kuala Lumpur",
+                dateAdded: "2025-06-14",
+                status: "pending",
+                notes: [],
+                reasoning: "Large manufacturing facility with boilers, drying processes. Tobacco drying emits VOCs, particulates. DOE Category 1-2 premise likely. Strong ESG reporting (BAT Group)."
+            },
+            {
+                id: 2,
+                name: "PPB Group Berhad",
+                sector: "Conglomerate - Flour, Feed, Food, Film, Property",
+                website: "https://www.ppbgroup.com/",
+                contact: "Corporate Affairs",
+                email: "corporateaffairs@ppb.com.my",
+                phone: "+60 3 2726 0088",
+                address: "12th Floor, UBN Tower, No. 10 Jalan P Ramlee, 50250 Kuala Lumpur",
+                dateAdded: "2025-06-14",
+                status: "pending",
+                notes: [],
+                reasoning: "Diversified with flour milling (FFM), animal feed, food processing. Multiple plants with boilers, dust emissions. FFM Berhad listed separately - both need CEMS for dust, NOx from boilers."
+            },
+            {
+                id: 3,
+                name: "Nestlé Malaysia",
+                sector: "Food & Beverage Manufacturing",
+                website: "https://www.nestle.com.my/",
+                contact: "Liyana Othman",
+                email: "Norliyana.Othman@my.nestle.com",
+                phone: "+60 3 7965 6627",
+                address: "Level 22, 1 Powerhouse, No. 1 Persiaran Bandar Utama, 47800 Petaling Jaya",
+                dateAdded: "2025-06-14",
+                status: "pending",
+                notes: [],
+                reasoning: "Multiple factories (Shah Alam, Batu Tiga, Chembong). Steam boilers, refrigeration. Net Zero 2050 commitment. FTSE4Good. Strong sustainability budget. Project RELeaf shows environmental investment appetite."
+            },
+            {
+                id: 4,
+                name: "UMW Holdings (Sime UMW)",
+                sector: "Automotive - Toyota, Perodua, Manufacturing",
+                website: "https://simeumw.com/",
+                contact: "General Enquiries",
+                email: "enquiry@umw.com.my",
+                phone: "+60 3 2774 6556",
+                address: "Menara Sime, Oasis Corporation Park, Jalan PJU 1A/2, Ara Damansara, 47301 Petaling Jaya",
+                dateAdded: "2025-06-14",
+                status: "pending",
+                notes: [],
+                reasoning: "Assembly plants (Shah Alam, Perodua Rawang). Paint booths = VOC emissions. Engine testing = NOx, CO. ISO 14001 certified. Part of Sime Darby group - group-wide sustainability push."
+            },
+            {
+                id: 5,
+                name: "Fraser & Neave Holdings",
+                sector: "Food & Beverage - Dairy, Beverages",
+                website: "https://www.fn.com.my/",
+                contact: "Jojo Ngo",
+                email: "jojo.ngo@fn.com.my",
+                phone: "+60 3 5101 4288",
+                address: "No. 1 Jalan Bukit Belimbing 26/38, Seksyen 26, 40400 Shah Alam",
+                dateAdded: "2025-06-14",
+                status: "pending",
+                notes: [],
+                reasoning: "Shah Alam HQ + 4 plants (Shah Alam, Pulau Indah, Kuching, KK). Dairy processing = boiler emissions. Beverage = CO2, cleaning chemicals. 12 Sustainability Commitment Targets 2025. FTSE4Good constituent."
+            },
+            {
+                id: 6,
+                name: "Oriental Holdings Berhad",
+                sector: "Automotive (Honda), Plantation, Healthcare, Hotels",
+                website: "https://ohb.com.my/",
+                contact: "Adrian Wong",
+                email: "ir@ohb.com.my",
+                phone: "+60 4 296 0401",
+                address: "1st Floor, 25B Lebuh Farquhar, 10200 Penang",
+                dateAdded: "2025-06-14",
+                status: "pending",
+                notes: [],
+                reasoning: "Honda assembly (Melaka), plantations (oil palm - biomass boilers), hospitals (incinerators). Diversified emissions profile. CFO contact shows financial authority. Sustainability policy published."
+            },
+            {
+                id: 7,
+                name: "Sime Darby Berhad",
+                sector: "Conglomerate - Plantation, Motors, Industrial, Property",
+                website: "https://www.sime.com/",
+                contact: "Corporate Communications",
+                email: "communications@sime.com",
+                phone: "+60 3 7623 2000",
+                address: "Level 9, Menara Sime, Oasis Corporate Park, Jalan PJU 1A/2, Ara Damansara, 47301 Petaling Jaya",
+                dateAdded: "2025-06-14",
+                status: "pending",
+                notes: [],
+                reasoning: "Massive plantation footprint (SDP) - biomass boilers, POME methane. Motors division (BMW, Ford, etc.) - paint shops. Industrial (heavy equipment). Group-wide Net Zero 2050. High DOE scrutiny."
+            },
+            {
+                id: 8,
+                name: "IOI Group",
+                sector: "Plantation, Resource Manufacturing, Renewables",
+                website: "https://www.ioigroup.com/",
+                contact: "Sustainability Team",
+                email: "ioisustainabilityteam@ioigroup.com",
+                phone: "+60 3 8947 8888",
+                address: "Level 29, IOI City Tower 2, Lebuh IRC, IOI Resort City, 62502 Putrajaya",
+                dateAdded: "2025-06-14",
+                status: "pending",
+                notes: [],
+                reasoning: "Palm oil mills = POME, biomass boilers. Oleochemical plants = VOCs, SOx. Net Zero 2040 target. Dedicated sustainability team email. RSPO certified. High regulatory visibility."
+            },
+            {
+                id: 9,
+                name: "Genting Malaysia Berhad",
+                sector: "Leisure & Hospitality, Plantations, Energy",
+                website: "https://www.gentingmalaysia.com/",
+                contact: "Investor Relations",
+                email: "ir.genm@genting.com",
+                phone: "+60 3 2178 2288",
+                address: "14th Floor, Wisma Genting, Jalan Sultan Ismail, 50250 Kuala Lumpur",
+                dateAdded: "2025-06-14",
+                status: "pending",
+                notes: [],
+                reasoning: "Genting Plantations - palm oil mills, biomass power. Resorts World - large boilers for heating/cooling. Genting Energy - power generation (CEMS mandatory). FTSE4Good. Multiple premises."
+            },
+            {
+                id: 10,
+                name: "Malayan Banking Berhad (Maybank)",
+                sector: "Financial Services - Banking",
+                website: "https://www.maybank.com/",
+                contact: "Corporate Affairs",
+                email: "corporateaffairs@maybank.com",
+                phone: "1-300 88 6688",
+                address: "Level 70, Menara Merdeka 118, Presint Merdeka 118, 50118 Kuala Lumpur",
+                dateAdded: "2025-06-14",
+                status: "pending",
+                notes: [],
+                reasoning: "Indirect - but finances heavy industry. Green financing portfolio. Own buildings (Menara Merdeka) - boiler emissions. ESG-linked loans require client emissions data. Strategic partner potential."
+            },
+
+            // NEW LEADS (Date: 2025-06-15)
+            {
+                id: 11,
+                name: "Petronas Chemicals Group Berhad",
+                sector: "Petrochemicals - Olefins, Derivatives, Fertilizers",
+                website: "https://www.petronas.com/pcg/",
+                contact: "Corporate Communications",
+                email: "corporate.communications@petronas.com.my",
+                phone: "+60 3 2331 4567",
+                address: "Tower 1, Petronas Twin Towers, KLCC, 50088 Kuala Lumpur",
+                dateAdded: "2025-06-15",
+                status: "pending",
+                notes: [],
+                reasoning: "Gurun, Kerteh, Gebeng complexes. Crackers, fertilizer plants = high NOx, SOx, CO, VOCs. Flare stack monitoring critical. FTSE4Good. PCG prioritizing domestic demand - capacity expansion = new monitoring needs."
+            },
+            {
+                id: 12,
+                name: "Southern Steel Berhad",
+                sector: "Steel - Long Products, Wire Rod",
+                website: "https://www.southernsteel.com/",
+                contact: "Corporate Affairs",
+                email: "enquiry@southernsteel.com",
+                phone: "+60 4 390 8888",
+                address: "2723, Lorong Perusahaan 12, Prai Industrial Estate, 13600 Prai, Penang",
+                dateAdded: "2025-06-15",
+                status: "pending",
+                notes: [],
+                reasoning: "Electric arc furnace (EAF) = high particulates, NOx, CO, heavy metals. Rolling mills = reheating furnace emissions. Recent Ann Joo acquisition = expanded footprint. DOE Category 1 mandatory CEMS."
+            },
+            {
+                id: 13,
+                name: "Ann Joo Resources Berhad",
+                sector: "Steel - Integrated (Blast Furnace + EAF)",
+                website: "http://www.annjoo.com.my/",
+                contact: "Corporate Affairs",
+                email: "corporate@annjoo.com.my",
+                phone: "+60 4 398 8888",
+                address: "Plot 168, Jalan Perusahaan Utama, Kawasan Perusahaan Prai, 13600 Prai, Penang",
+                dateAdded: "2025-06-15",
+                status: "pending",
+                notes: [],
+                reasoning: "Only integrated blast furnace in Malaysia (Prai). BF gas cleaning, sinter plant, coke oven = complex emissions (SOx, NOx, dioxins, particulates). Highest regulatory scrutiny in steel sector. Being acquired by Southern Steel."
+            },
+            {
+                id: 14,
+                name: "Sime Darby Plantation Berhad",
+                sector: "Plantation - Palm Oil Upstream & Downstream",
+                website: "https://www.simedarbyplantation.com/",
+                contact: "Sustainability",
+                email: "sustainability@simedarbyplantation.com",
+                phone: "+60 3 2774 6556",
+                address: "Level 3, Main Block, Plantation Tower, No. 2, Jalan PJU 1A/7, Ara Damansara, 47301 Petaling Jaya",
+                dateAdded: "2025-06-15",
+                status: "pending",
+                notes: [],
+                reasoning: "World's largest certified sustainable palm oil producer. 60+ mills = biomass boilers, POME. Methane capture projects. RSPO, MSPO, ISCC. Net Zero 2050. Scope 1&2 reporting mandatory. Dedicated sustainability team."
+            },
+            {
+                id: 15,
+                name: "Lotte Chemical Titan Holding Berhad",
+                sector: "Petrochemicals - Polyolefins, Olefins",
+                website: "https://www.lottechem.my/",
+                contact: "Corporate Communications",
+                email: "corpcomm@lottechem.my",
+                phone: "+60 3 8966 8000",
+                address: "Titan 1 Building, PT 27881, Kawasan Perindustrian Gebeng, 26080 Kuantan, Pahang",
+                dateAdded: "2025-06-15",
+                status: "pending",
+                notes: [],
+                reasoning: "Gebeng complex - ethylene cracker, PE/PP plants. Flare monitoring critical. VOCs, NOx from furnaces. Korean parent - high tech standards. Listed 2017 - large CAPEX cycle. FTSE4Good."
+            },
+            {
+                id: 16,
+                name: "Inari Amertron Berhad",
+                sector: "Semiconductor - OSAT, EMS",
+                website: "https://www.inari-amertron.com/",
+                contact: "John Tee",
+                email: "i-enquiry@inari-amertron.com.my",
+                phone: "+60 3 7876 0169",
+                address: "D-07-03, Plaza Kelana Jaya, Jalan SS7/13A, 47301 Petaling Jaya (Corporate); Bayan Lepas FIZ Plants (Penang)",
+                dateAdded: "2025-06-15",
+                status: "pending",
+                notes: [],
+                reasoning: "7 plants in Bayan Lepas. Soldering, cleaning = VOCs, acid gases. Cleanroom exhaust. FTSE4Good since 2020. IR contact (John Tee) accessible. Expanding capacity = new emission points."
+            },
+            {
+                id: 17,
+                name: "QL Resources Berhad",
+                sector: "Agro-Food - Livestock, Marine, Palm Oil, Retail",
+                website: "https://ql.com.my/",
+                contact: "Corporate Affairs",
+                email: "corporate@ql.com.my",
+                phone: "+60 3 7877 8888",
+                address: "No. 15, Jalan PJS 8/7, Bandar Sunway, 46150 Petaling Jaya",
+                dateAdded: "2025-06-15",
+                status: "pending",
+                notes: [],
+                reasoning: "Integrated livestock = feed mills (dust), rendering (odors), wastewater (methane). Marine = surimi processing (boilers). Palm oil = biomass, POME. FamilyMart retail = refrigeration. Fast-growing, ESG focus emerging."
+            },
+            {
+                id: 18,
+                name: "Scientex Berhad",
+                sector: "Packaging (Flexible Plastics) & Property",
+                website: "https://scientex.com.my/",
+                contact: "Corporate Affairs",
+                email: "info@scientex.com.my",
+                phone: "+60 3 5524 8888",
+                address: "No. 9, Persiaran Selangor, Seksyen 15, 40200 Shah Alam",
+                dateAdded: "2025-06-15",
+                status: "pending",
+                notes: [],
+                reasoning: "18 global plants (5 in MY). Extrusion, printing = VOCs (solvents). Boilers for steam. Sustainability page mentions GHG monitoring. Property division = construction dust. Listed 1990 - mature ESG journey."
+            },
+            {
+                id: 19,
+                name: "Duopharma Biotech Berhad",
+                sector: "Pharmaceuticals - Generic Manufacturing",
+                website: "https://duopharmabiotech.com/",
+                contact: "Corporate Affairs",
+                email: "enquiry@duopharmabiotech.com",
+                phone: "+60 3 8926 8888",
+                address: "Lot 2599, Jalan Seruling 59, Kawasan 3, Taman Klang Jaya, 41200 Klang",
+                dateAdded: "2025-06-15",
+                status: "pending",
+                notes: [],
+                reasoning: "Largest local generic manufacturer. Bangi, Klang plants. Solvent recovery, cleanroom HVAC, boiler emissions. GMP & PIC/S compliance. ESG reporting emerging. Pharma under increasing DOE scrutiny for solvent emissions."
+            },
+            {
+                id: 20,
+                name: "Cement Industries of Malaysia Berhad (CIMA)",
+                sector: "Cement & Construction Materials",
+                website: "https://www.cima.com.my/",
+                contact: "Corporate Affairs",
+                email: "info@cima.com.my",
+                phone: "+60 3 7966 8888",
+                address: "Level 10, Menara Sime, Oasis Corporate Park, Ara Damansara, 47301 Petaling Jaya",
+                dateAdded: "2025-06-15",
+                status: "pending",
+                notes: [],
+                reasoning: "Cement kilns = NOx, SOx, particulates, Hg, dioxins. CEMS mandatory per DOE. Alternative fuels (RDF, biomass) = variable emissions. Industry consolidation (YTL/Lafarge) = CAPEX for upgrades. CIMA = pure-play cement."
+            }
+        ];
+
+        let currentFilter = 'all';
+        let currentLeadId = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            renderLeads();
+            updateStats();
+        });
+
+        function renderLeads() {
+            const tbody = document.getElementById('leadsTableBody');
+            tbody.innerHTML = '';
+
+            const filtered = leads.filter(lead => {
+                if (currentFilter === 'all') return true;
+                if (currentFilter === 'new') return lead.dateAdded === '2025-06-15';
+                if (currentFilter === 'contacted') return lead.status === 'contacted';
+                if (currentFilter === 'meeting') return lead.status === 'meeting';
+                if (currentFilter === 'pending') return lead.status === 'pending';
+                return true;
+            });
+
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const searched = filtered.filter(lead =>
+                lead.name.toLowerCase().includes(searchTerm) ||
+                lead.sector.toLowerCase().includes(searchTerm) ||
+                lead.contact.toLowerCase().includes(searchTerm) ||
+                lead.email.toLowerCase().includes(searchTerm) ||
+                lead.phone.includes(searchTerm)
+            );
+
+            searched.forEach(lead => {
+                const row = document.createElement('tr');
+                row.className = `lead-row ${lead.status}`;
+                row.innerHTML = `
+                    <td class="py-3">
+                        <span class="badge ${getStatusBadgeClass(lead.status)}">${getStatusLabel(lead.status)}</span>
+                    </td>
+                    <td class="py-3">
+                        <div class="font-medium text-gray-900">${lead.name}</div>
+                        <div class="text-xs text-gray-500">${lead.sector}</div>
+                    </td>
+                    <td class="py-3 hidden md:table-cell">
+                        <span class="sector-badge badge">${lead.sector.split(' - ')[0]}</span>
+                    </td>
+                    <td class="py-3 hidden lg:table-cell">
+                        <div class="text-sm">${lead.contact}</div>
+                    </td>
+                    <td class="py-3 hidden lg:table-cell">
+                        <a href="mailto:${lead.email}" class="text-sm text-blue-600 hover:underline">${lead.email}</a>
+                    </td>
+                    <td class="py-3 hidden md:table-cell">
+                        <span class="text-sm font-mono">${lead.phone}</span>
+                    </td>
+                    <td class="py-3 hidden lg:table-cell">
+                        <span class="text-sm text-gray-500">${lead.dateAdded}</span>
+                    </td>
+                    <td class="py-3">
+                        <button onclick="openLeadModal(${lead.id})" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                            <i class="fas fa-eye mr-1"></i>View
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function getStatusBadgeClass(status) {
+            switch(status) {
+                case 'contacted': return 'badge-success';
+                case 'meeting': return 'badge-warning';
+                case 'closed': return 'badge-danger';
+                default: return 'badge-info';
+            }
+        }
+
+        function getStatusLabel(status) {
+            switch(status) {
+                case 'contacted': return 'Contacted';
+                case 'meeting': return 'Meeting Set';
+                case 'closed': return 'Closed Won';
+                default: return 'Pending';
+            }
+        }
+
+        function filterLeads() {
+            renderLeads();
+        }
+
+        function setFilter(filter) {
+            currentFilter = filter;
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            renderLeads();
+        }
+
+        function openLeadModal(leadId) {
+            const lead = leads.find(l => l.id === leadId);
+            if (!lead) return;
+            currentLeadId = leadId;
+
+            document.getElementById('modalCompanyName').textContent = lead.name;
+            document.getElementById('modalSector').textContent = lead.sector;
+            document.getElementById('modalContact').textContent = lead.contact;
+            document.getElementById('modalEmail').textContent = lead.email;
+            document.getElementById('modalEmail').href = `mailto:${lead.email}`;
+            document.getElementById('modalPhone').textContent = lead.phone;
+            document.getElementById('modalDateAdded').textContent = lead.dateAdded;
+            document.getElementById('modalWebsite').textContent = lead.website;
+            document.getElementById('modalWebsite').href = lead.website;
+            document.getElementById('modalAddress').textContent = lead.address;
+
+            renderNotes(lead.notes);
+            document.getElementById('leadModal').style.display = 'flex';
+        }
+
+        function renderNotes(notes) {
+            const container = document.getElementById('notesContainer');
+            container.innerHTML = '';
+            if (notes.length === 0) {
+                container.innerHTML = '<p class="text-sm text-gray-500 text-center py-4">No notes yet. Add your first activity above.</p>';
+                return;
+            }
+            notes.slice().reverse().forEach(note => {
+                const div = document.createElement('div');
+                div.className = 'note-item';
+                div.innerHTML = `
+                    <div class="note-header">
+                        <span class="note-type note-type-${note.type}">${getNoteTypeLabel(note.type)}</span>
+                        <span class="text-xs text-gray-500">${note.timestamp}</span>
+                    </div>
+                    <p class="text-sm text-gray-700">${note.text}</p>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function getNoteTypeLabel(type) {
+            switch(type) {
+                case 'call': return 'Call';
+                case 'email': return 'Email';
+                case 'meeting': return 'Meeting';
+                default: return 'Note';
+            }
+        }
+
+        function addNote() {
+            const type = document.getElementById('noteType').value;
+            const text = document.getElementById('noteText').value.trim();
+            if (!text) return showToast('Please enter a note');
+
+            const lead = leads.find(l => l.id === currentLeadId);
+            if (!lead) return;
+
+            lead.notes.push({
+                type,
+                text,
+                timestamp: new Date().toLocaleString('en-MY', { dateStyle: 'short', timeStyle: 'short' })
+            });
+
+            document.getElementById('noteText').value = '';
+            renderNotes(lead.notes);
+            renderLeads();
+            updateStats();
+            showToast('Note added');
+        }
+
+        function updateLeadStatus(status) {
+            const lead = leads.find(l => l.id === currentLeadId);
+            if (!lead) return;
+
+            lead.status = status;
+            lead.notes.push({
+                type: 'note',
+                text: `Status changed to ${getStatusLabel(status)}`,
+                timestamp: new Date().toLocaleString('en-MY', { dateStyle: 'short', timeStyle: 'short' })
+            });
+
+            renderNotes(lead.notes);
+            renderLeads();
+            updateStats();
+            closeModal('leadModal');
+            showToast(`Status updated to ${getStatusLabel(status)}`);
+        }
+
+        function updateStats() {
+            document.getElementById('stat-total').textContent = leads.length;
+            document.getElementById('stat-contacted').textContent = leads.filter(l => l.status === 'contacted').length;
+            document.getElementById('stat-meetings').textContent = leads.filter(l => l.status === 'meeting').length;
+            document.getElementById('stat-closed').textContent = leads.filter(l => l.status === 'closed').length;
+            document.getElementById('stat-month').textContent = leads.filter(l => l.dateAdded === '2025-06-15').length;
+        }
+
+        function openReasoningModal() {
+            document.getElementById('reasoningModal').style.display = 'flex';
+        }
+
+        function openTemplateModal() {
+            document.getElementById('templateModal').style.display = 'flex';
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+
+        function copyTemplate(id) {
+            const text = document.getElementById(id).textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('Template copied to clipboard!');
+            });
+        }
+
+        function exportCSV() {
+            const headers = ['Company', 'Sector', 'Website', 'Contact Person', 'Email', 'Phone', 'Address', 'Date Added', 'Status'];
+            const rows = leads.map(l => [
+                l.name, l.sector, l.website, l.contact, l.email, l.phone, l.address, l.dateAdded, getStatusLabel(l.status)
+            ]);
+            const csv = [headers.join(','), ...rows.map(r => r.map(c => `"${c.replace(/"/g, '""')}"`).join(','))].join('\n');
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `ada-ir-leads-${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('CSV exported successfully!');
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMessage').textContent = message;
+            toast.style.display = 'flex';
+            setTimeout(() => toast.style.display = 'none', 3000);
+        }
+    </script>
+</body>
+</html>
