@@ -39,10 +39,9 @@ git config --global credential.helper store
 # Store credentials for normal git HTTPS operations. The token is hidden from terminal output.
 printf 'protocol=https\nhost=github.com\nusername=%s\npassword=%s\n\n' "$GITHUB_USERNAME" "$GITHUB_TOKEN" | git credential approve
 
-printf '\nVerifying token with GitHub API...\n'
-HTTP_CODE=$(curl -sS -o /tmp/github-user-check.json -w '%{http_code}' \
-  -H "Authorization: Bearer ${GITHUB_TOKEN}" \
-  -H 'Accept: application/vnd.github+json' \
+printf 'Verifying token with GitHub API...\n'
+read -r HTTP_CODE _HEAD BODY _TRAILER < <(curl -sS -o /tmp/github-user-check.json -w '%{http_code} %{size_header} %{size_download}\n' \
+  -H "Authorization: Bearer ***  '-H', 'Accept: application/vnd.github+json' \
   https://api.github.com/user)
 
 if [ "$HTTP_CODE" != "200" ]; then
