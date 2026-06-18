@@ -2,10 +2,10 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open('ada-ir-leads').then((cache) => {
       return cache.addAll([
-        '/ada-ir-leads/',
-        '/ada-ir-leads/index.html',
-        '/ada-ir-leads/manifest.json',
-        '/ada-ir-leads/icon-192.svg',
+        '/',
+        '/index.html',
+        '/manifest.json',
+        '/icon-192.svg',
       ]);
     })
   );
@@ -32,12 +32,12 @@ self.addEventListener('notificationclick', (event) => {
   event.waitUntil(
     clients.matchAll({ type: 'window' }).then((clientList) => {
       for (const client of clientList) {
-        if (client.url.includes('/ada-ir-leads/') && 'focus' in client) {
+        if ('focus' in client) {
           return client.focus();
         }
       }
       if (clients.openWindow) {
-        return clients.openWindow('/ada-ir-leads/');
+        return clients.openWindow('/');
       }
     })
   );

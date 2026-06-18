@@ -3,8 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#0b74de">
   <title>ADA-IR Leads Tracker</title>
   <style>
     :root {
@@ -801,6 +799,37 @@
 
   <script>
     // ===== DATA =====
+        </script>
+    <script>
+      let deferredPrompt = null;
+      const installBtn = document.createElement('button');
+      installBtn.className = 'export-btn';
+      installBtn.id = 'installBtn';
+      installBtn.type = 'button';
+      installBtn.ariaLabel = 'Install app';
+      installBtn.textContent = 'Install App';
+      installBtn.style.display = 'none';
+
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        installBtn.style.display = '';
+        document.getElementById('headerEnd').appendChild(installBtn);
+      });
+
+      installBtn.addEventListener('click', async () => {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        deferredPrompt = null;
+        installBtn.style.display = 'none';
+      });
+
+      window.addEventListener('appinstalled', () => {
+        installBtn.style.display = 'none';
+        deferredPrompt = null;
+      });
+    </script>
+    <script>
     const LEADS = [
       { company: "Malayan Cement (YTL Cement)", sector: "Cement", location: "Kuala Lumpur", status: "New", email: "contact@malayancement.com.my", phone: "+60 3-2282 8888", painPoint: "Need to comply with Malaysia's Environmental Quality Act 1974 amendments", emissions: "1,250,000", score: 85 },
       { company: "Hume Cement", sector: "Cement", location: "Gopeng, Perak", status: "New", email: "info@humecement.com", phone: "+60 5-351 8888", painPoint: "Preparing for mandatory carbon reporting under Bursa Malaysia sustainability requirements", emissions: "980,000", score: 78 },
@@ -1355,20 +1384,6 @@ ada-ir.com | Emissions Intelligence for Malaysia`,
     // Initialize modal to closed state by default
     closeModal();
     renderLeads();
-
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('service-worker.js').catch((error) => {
-        console.warn('ServiceWorker registration failed', error);
-      });
-    }
-
-    (function registerNotifications() {
-      if (!('Notification' in window)) return;
-      if (Notification.permission === 'granted') return;
-      if (Notification.permission !== 'denied') {
-        Notification.requestPermission();
-      }
-    })();
   </script>
 </body>
 </html>
