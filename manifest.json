@@ -9,7 +9,7 @@
   "description": "Malaysia emissions monitoring leads tracker",
   "icons": [
     {
-      "src": "/ada-ir-leads/icon-192.svg",
+      "src": "icon-192.svg",
       "sizes": "192x192",
       "type": "image/svg+xml",
       "purpose": "any maskable"
