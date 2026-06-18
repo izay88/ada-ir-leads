@@ -1,1358 +1,763 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>ADA-IR Leads Tracker</title>
-  <style>
-    :root {
-      color-scheme: light;
-      --bg: #f8fafc;
-      --bg-elevated: #ffffff;
-      --bg-modal: #ffffff;
-      --border: #d9e2ec;
-      --border-light: #b8c4d2;
-      --text: #102033;
-      --text-muted: #5f6f82;
-      --accent: #0b74de;
-      --accent-hover: #075bb0;
-      --cement: #64748b;
-      --steel: #0b74de;
-      --palm: #16803c;
-      --petrochem: #a16207;
-      --won: #16803c;
-      --lost: #dc2626;
-      --row-hover: #eef5ff;
-      --shadow: rgba(15, 23, 42, 0.18);
-      --safe-top: env(safe-area-inset-top, 0px);
-      --safe-bottom: env(safe-area-inset-bottom, 0px);
-      --safe-left: env(safe-area-inset-left, 0px);
-      --safe-right: env(safe-area-inset-right, 0px);
-    }
-
-    [data-theme="dark"] {
-      color-scheme: dark;
-      --bg: #0d1117;
-      --bg-elevated: #161b22;
-      --bg-modal: #1c2128;
-      --border: #30363d;
-      --border-light: #484f58;
-      --text: #e6edf3;
-      --text-muted: #8b949e;
-      --accent: #58a6ff;
-      --accent-hover: #79c0ff;
-      --cement: #8b949e;
-      --steel: #58a6ff;
-      --palm: #3fb950;
-      --petrochem: #d29922;
-      --won: #3fb950;
-      --lost: #f85149;
-      --row-hover: #1f2428;
-      --shadow: rgba(0, 0, 0, 0.4);
-    }
-
-    @media (prefers-color-scheme: dark) {
-      [data-theme="system"] {
-        color-scheme: dark;
-        --bg: #0d1117;
-        --bg-elevated: #161b22;
-        --bg-modal: #1c2128;
-        --border: #30363d;
-        --border-light: #484f58;
-        --text: #e6edf3;
-        --text-muted: #8b949e;
-        --accent: #58a6ff;
-        --accent-hover: #79c0ff;
-        --cement: #8b949e;
-        --steel: #58a6ff;
-        --palm: #3fb950;
-        --petrochem: #d29922;
-        --won: #3fb950;
-        --lost: #f85149;
-        --row-hover: #1f2428;
-        --shadow: rgba(0, 0, 0, 0.4);
-      }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-        scroll-behavior: auto !important;
-      }
-    }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      line-height: 1.5;
-      min-height: 100vh;
-      overscroll-behavior-y: none;
-    }
-
-    .container { max-width: 1200px; margin: 0 auto; padding: 1rem; padding-bottom: calc(5rem + var(--safe-bottom)); }
-
-    header {
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      background: var(--bg);
-      border-bottom: 1px solid var(--border);
-      padding: 1rem 0;
-      margin-bottom: 1rem;
-    }
-
-    .header-content { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between; }
-
-    h1 { font-size: 1.5rem; font-weight: 600; color: var(--text); }
-
-    .search-wrapper { flex: 1; min-width: 200px; }
-
-    .search-input {
-      width: 100%;
-      padding: 0.625rem 1rem;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      background: var(--bg-elevated);
-      color: var(--text);
-      font-size: 0.875rem;
-      transition: border-color 0.15s, box-shadow 0.15s;
-    }
-
-    .search-input:focus {
-      outline: none;
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.15);
-    }
-
-    .search-input::placeholder { color: var(--text-muted); }
-
-    .export-btn, .theme-toggle-btn {
-      padding: 0.625rem 1.25rem;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      background: var(--bg-elevated);
-      color: var(--text);
-      font-size: 0.875rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: background 0.15s, border-color 0.15s;
-      white-space: nowrap;
-      min-height: 44px;
-    }
-
-    .export-btn:hover, .theme-toggle-btn:hover {
-      background: var(--row-hover);
-      border-color: var(--accent);
-    }
-
-    .table-wrapper { overflow-x: auto; }
-
-    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
-
-    thead {
-      position: sticky;
-      top: 0;
-      z-index: 10;
-    }
-
-    th {
-      text-align: left;
-      padding: 0.75rem 1rem;
-      background: var(--bg-elevated);
-      border-bottom: 2px solid var(--border);
-      font-weight: 600;
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--text-muted);
-      white-space: nowrap;
-    }
-
-    td { padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
-
-    tbody tr { transition: background 0.15s; }
-
-    tbody tr:hover, tbody tr.visible:hover { background: var(--row-hover); }
-
-    tbody tr.hidden { display: none; }
-
-    .num-col { width: 48px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
-
-    .company-col { font-weight: 500; min-width: 200px; }
-
-    .sector-badge {
-      display: inline-block;
-      padding: 0.25rem 0.625rem;
-      border-radius: 9999px;
-      font-size: 0.7rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.025em;
-      white-space: nowrap;
-    }
-
-    .sector-cement { background: rgba(139, 148, 158, 0.2); color: var(--cement); border: 1px solid rgba(139, 148, 158, 0.3); }
-    .sector-steel { background: rgba(88, 166, 255, 0.2); color: var(--steel); border: 1px solid rgba(88, 166, 255, 0.3); }
-    .sector-palm { background: rgba(63, 185, 80, 0.2); color: var(--palm); border: 1px solid rgba(63, 185, 80, 0.3); }
-    .sector-petrochem { background: rgba(210, 153, 34, 0.2); color: var(--petrochem); border: 1px solid rgba(210, 153, 34, 0.3); }
-
-    .location-col { color: var(--text-muted); min-width: 150px; }
-
-    .status-select {
-      padding: 0.375rem 2rem 0.375rem 0.75rem;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      background: var(--bg-elevated);
-      color: var(--text);
-      font-size: 0.8125rem;
-      font-family: inherit;
-      cursor: pointer;
-      appearance: none;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238b949e' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
-      background-repeat: no-repeat;
-      background-position: right 0.5rem center;
-      transition: border-color 0.15s;
-      min-height: 44px;
-    }
-
-    .status-select:focus { outline: none; border-color: var(--accent); }
-
-    .status-new { border-left: 3px solid var(--text-muted); }
-    .status-contacted { border-left: 3px solid var(--accent); }
-    .status-qualified { border-left: 3px solid var(--palm); }
-    .status-proposal { border-left: 3px solid var(--petrochem); }
-    .status-won { border-left: 3px solid var(--won); }
-    .status-lost { border-left: 3px solid var(--lost); }
-
-    .actions-col { width: 1px; white-space: nowrap; }
-
-    /* Mobile card view */
-    @media (max-width: 639px) {
-      .table-wrapper { overflow-x: visible; }
-
-      table { display: block; }
-
-      thead { display: none; }
-
-      tbody { display: block; }
-
-      tbody tr {
-        display: block;
-        background: var(--bg-elevated);
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        margin-bottom: 1rem;
-        padding: 1rem;
-        position: relative;
-        touch-action: pan-y pinch-zoom;
-      }
-
-      tbody tr.hidden { display: none; }
-
-      td {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 0.625rem 0;
-        border-bottom: 1px solid var(--border);
-        min-height: 44px;
-      }
-
-      td:last-child { border-bottom: none; }
-
-      td::before {
-        content: attr(data-label);
-        font-size: 0.7rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        color: var(--text-muted);
-      }
-
-      .num-col { order: -1; font-size: 1.25rem; font-weight: 600; }
-
-      .company-col { order: -1; font-size: 1.125rem; }
-
-      .actions-col { display: none; }
-
-      /* Swipe hint indicator */
-      tbody tr::after {
-        content: '← Swipe for status';
-        position: absolute;
-        right: 1rem;
-        bottom: 0.5rem;
-        font-size: 0.65rem;
-        color: var(--text-muted);
-        opacity: 0.5;
-        pointer-events: none;
-        transition: opacity 0.2s;
-      }
-
-      tbody tr:active::after,
-      tbody tr.swiping::after { opacity: 1; }
-
-      /* Swipe feedback colors */
-      tbody tr.swipe-new { border-left-color: var(--text-muted); }
-      tbody tr.swipe-contacted { border-left-color: var(--accent); }
-      tbody tr.swipe-qualified { border-left-color: var(--palm); }
-      tbody tr.swipe-proposal { border-left-color: var(--petrochem); }
-      tbody tr.swipe-won { border-left-color: var(--won); }
-      tbody tr.swipe-lost { border-left-color: var(--lost); }
-    }
-
-    .no-results {
-      text-align: center;
-      padding: 3rem;
-      color: var(--text-muted);
-      display: none;
-    }
-
-    .no-results.visible { display: block; }
-
-    /* Bottom Sheet Modal */
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.7);
-      z-index: 1000;
-      opacity: 0;
-      visibility: hidden;
-      transition: opacity 0.2s ease-out, visibility 0.2s;
-      backdrop-filter: blur(4px);
-    }
-
-    .modal-overlay.open {
-      opacity: 1;
-      visibility: visible;
-    }
-
-    .modal-sheet {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      background: var(--bg-modal);
-      border-top-left-radius: 16px;
-      border-top-right-radius: 16px;
-      padding: calc(1rem + var(--safe-top)) calc(1rem + var(--safe-left)) calc(3rem + var(--safe-bottom)) calc(1rem + var(--safe-right));
-      max-height: 85vh;
-      overflow-y: auto;
-      transform: translateY(100%);
-      opacity: 0;
-      visibility: hidden;
-      pointer-events: none;
-      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease-out, visibility 0.2s;
-      z-index: 1001;
-      box-shadow: 0 -4px 24px var(--shadow);
-    }
-
-    .modal-sheet.open {
-      transform: translateY(0);
-      opacity: 1;
-      visibility: visible;
-      pointer-events: auto;
-    }
-
-    @media (min-width: 640px) {
-      .modal-sheet {
-        bottom: 50%;
-        left: 50%;
-        right: auto;
-        width: 480px;
-        max-width: calc(100vw - 2rem);
-        max-height: 80vh;
-        border-radius: 16px;
-        transform: translate(-50%, 50%) scale(0.95);
-        padding: 1.5rem;
-      }
-      .modal-sheet.open {
-        transform: translate(-50%, 50%) scale(1);
-        opacity: 1;
-        visibility: visible;
-        pointer-events: auto;
-      }
-    }
-
-    .modal-handle {
-      width: 40px;
-      height: 4px;
-      background: var(--border);
-      border-radius: 2px;
-      margin: 0 auto 1rem;
-    }
-
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 1.25rem;
-      padding-bottom: 1rem;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .modal-company { font-size: 1.25rem; font-weight: 600; line-height: 1.3; }
-
-    .modal-sector { display: inline-block; margin-top: 0.5rem; }
-
-    .modal-close {
-      width: 36px;
-      height: 36px;
-      border: none;
-      background: var(--bg-elevated);
-      border-radius: 8px;
-      color: var(--text);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: background 0.15s;
-      flex-shrink: 0;
-      position: relative;
-      z-index: 1002;
-    }
-
-    .modal-close svg {
-      pointer-events: none;
-    }
-
-    .modal-close:hover { background: var(--row-hover); }
-    .modal-close:focus { outline: none; box-shadow: 0 0 0 2px var(--accent); }
-
-    .modal-grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 0.875rem;
-    }
-
-    @media (min-width: 480px) {
-      .modal-grid { grid-template-columns: repeat(2, 1fr); }
-    }
-
-    .modal-field {
-      background: var(--bg-elevated);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 1rem;
-    }
-
-    .modal-field.full-width { grid-column: 1 / -1; }
-
-    .modal-label {
-      font-size: 0.65rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--text-muted);
-      margin-bottom: 0.375rem;
-    }
-
-    .modal-value { font-size: 0.9375rem; color: var(--text); word-break: break-word; }
-
-    .modal-value a { color: var(--accent); text-decoration: none; }
-    .modal-value a:hover { text-decoration: underline; }
-
-    .modal-status-row {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-    }
-
-    .modal-status-select {
-      flex: 1;
-      min-height: 44px;
-    }
-
-    /* Tabs for outreach templates */
-    .modal-tabs {
-      display: flex;
-      gap: 0.5rem;
-      margin-bottom: 1rem;
-      border-bottom: 1px solid var(--border);
-      padding-bottom: 0.5rem;
-    }
-
-    .modal-tab {
-      padding: 0.5rem 1rem;
-      border: none;
-      background: transparent;
-      color: var(--text-muted);
-      font-size: 0.8125rem;
-      font-weight: 500;
-      cursor: pointer;
-      border-radius: 6px;
-      transition: color 0.15s, background 0.15s;
-      white-space: nowrap;
-    }
-
-    .modal-tab:hover { color: var(--text); background: var(--bg-elevated); }
-    .modal-tab.active { color: var(--accent); background: rgba(88, 166, 255, 0.1); }
-    .modal-tab:focus { outline: none; box-shadow: 0 0 0 2px var(--accent); }
-
-    .modal-tab-panel { display: none; }
-    .modal-tab-panel.active { display: block; }
-
-    .template-box {
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 1rem;
-      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-      font-size: 0.75rem;
-      line-height: 1.6;
-      white-space: pre-wrap;
-      overflow-x: auto;
-      color: var(--text);
-      max-height: 300px;
-      overflow-y: auto;
-    }
-
-    .template-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 0.5rem;
-      margin-bottom: 0.75rem;
-    }
-
-    .copy-template-btn {
-      min-height: 40px;
-      padding: 0.5rem 0.875rem;
-      border: 1px solid var(--border-light);
-      border-radius: 8px;
-      background: var(--bg-elevated);
-      color: var(--text);
-      font-size: 0.8125rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.15s, border-color 0.15s, color 0.15s;
-    }
-
-    .copy-template-btn:hover {
-      border-color: var(--accent);
-      color: var(--accent-hover);
-    }
-
-    .copy-template-btn.copied {
-      border-color: var(--won);
-      color: var(--won);
-    }
-
-    /* Pull to refresh */
-    .pull-to-refresh {
-      height: 60px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--text-muted);
-      font-size: 0.8125rem;
-      transform: translateY(-100%);
-      transition: transform 0.2s;
-    }
-
-    .pull-to-refresh.visible { transform: translateY(0); }
-
-    .pull-to-refresh.refreshing { color: var(--accent); }
-
-    /* Tweaks panel */
-    .tweaks-toggle {
-      position: fixed;
-      bottom: calc(1rem + var(--safe-bottom));
-      right: calc(1rem + var(--safe-right));
-      z-index: 2000;
-    }
-
-    .tweaks-btn {
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      border: 1px solid var(--border);
-      background: var(--bg-elevated);
-      color: var(--text);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 4px 16px var(--shadow);
-      transition: transform 0.15s, border-color 0.15s;
-    }
-
-    .tweaks-btn:hover { transform: scale(1.05); border-color: var(--accent); }
-    .tweaks-btn:focus { outline: none; box-shadow: 0 0 0 2px var(--accent), 0 4px 16px var(--shadow); }
-
-    .tweaks-panel {
-      position: fixed;
-      bottom: calc(3.5rem + var(--safe-bottom));
-      right: calc(1rem + var(--safe-right));
-      background: var(--bg-modal);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 1rem;
-      min-width: 240px;
-      max-width: 280px;
-      box-shadow: 0 8px 32px var(--shadow);
-      transform: translateY(100%) scale(0.95);
-      opacity: 0;
-      visibility: hidden;
-      transition: transform 0.2s, opacity 0.2s, visibility 0.2s;
-      z-index: 2001;
-    }
-
-    .tweaks-panel.open {
-      transform: translateY(0) scale(1);
-      opacity: 1;
-      visibility: visible;
-    }
-
-    .tweaks-title { font-weight: 600; margin-bottom: 0.75rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border); }
-
-    .tweaks-section { margin-bottom: 1rem; }
-    .tweaks-section:last-child { margin-bottom: 0; }
-
-    .tweaks-label { font-size: 0.75rem; font-weight: 500; color: var(--text-muted); margin-bottom: 0.5rem; display: block; }
-
-    .tweaks-select, .tweaks-checkbox {
-      width: 100%;
-      padding: 0.5rem 0.75rem;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      background: var(--bg-elevated);
-      color: var(--text);
-      font-size: 0.8125rem;
-      cursor: pointer;
-    }
-
-    .tweaks-checkbox { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; border-radius: 6px; }
-    .tweaks-checkbox input { width: 18px; height: 18px; accent-color: var(--accent); }
-
-    /* Landscape mobile adjustments */
-    @media (max-width: 639px) and (orientation: landscape) {
-      .container { padding-bottom: calc(4rem + var(--safe-bottom)); }
-      .modal-sheet { max-height: 75vh; }
-      tbody tr { padding: 0.75rem; }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ada-ir.com Daily Lead Tracker — 18 June 2026</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; background: #0d1117; color: #e6edf3; line-height: 1.6; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        header { text-align: center; padding: 30px 0; border-bottom: 1px solid #30363d; margin-bottom: 30px; }
+        h1 { font-size: 2rem; font-weight: 700; color: #58a6ff; margin-bottom: 8px; }
+        .subtitle { color: #8b949e; font-size: 1rem; }
+        .meta { display: flex; justify-content: center; gap: 24px; margin-top: 16px; color: #8b949e; font-size: 0.875rem; }
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; margin-bottom: 30px; }
+        .stat-card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px; text-align: center; }
+        .stat-value { font-size: 2rem; font-weight: 700; color: #58a6ff; }
+        .stat-label { color: #8b949e; font-size: 0.875rem; margin-top: 4px; }
+        table { width: 100%; border-collapse: collapse; background: #161b22; border-radius: 8px; overflow: hidden; border: 1px solid #30363d; }
+        th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #21262d; }
+        th { background: #21262d; color: #58a6ff; font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover { background: #1f2428; }
+        .lead-score { font-weight: 700; padding: 4px 8px; border-radius: 4px; font-size: 0.875rem; }
+        .score-high { background: #238636; color: #fff; }
+        .score-med { background: #d29922; color: #0d1117; }
+        .score-low { background: #da3633; color: #fff; }
+        .expand-btn { background: none; border: none; color: #58a6ff; cursor: pointer; font-size: 0.875rem; padding: 4px 8px; }
+        .expand-btn:hover { text-decoration: underline; }
+        .details { display: none; background: #0d1117; border-top: 1px solid #21262d; }
+        .details.open { display: table-row; }
+        .detail-cell { padding: 20px 16px; }
+        .detail-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; }
+        .detail-item { background: #161b22; padding: 12px; border-radius: 6px; border: 1px solid #30363d; }
+        .detail-label { color: #8b949e; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+        .detail-value { color: #e6edf3; }
+        .template-box { background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 16px; margin-top: 12px; font-family: 'Monaco', 'Menlo', monospace; font-size: 0.8rem; white-space: pre-wrap; overflow-x: auto; color: #e6edf3; }
+        .tab-buttons { display: flex; gap: 8px; margin-bottom: 12px; }
+        .tab-btn { background: #21262d; border: 1px solid #30363d; color: #8b949e; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; }
+        .tab-btn.active { background: #58a6ff; border-color: #58a6ff; color: #0d1117; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .footer { text-align: center; padding: 30px; color: #484f58; font-size: 0.875rem; border-top: 1px solid #30363d; margin-top: 30px; }
+        @media (max-width: 768px) {
+            table, thead, tbody, th, td, tr { display: block; }
+            thead { display: none; }
+            tr { margin-bottom: 16px; border: 1px solid #30363d; border-radius: 8px; background: #161b22; }
+            td { border: none; padding: 8px 16px; display: flex; justify-content: space-between; }
+            td::before { content: attr(data-label); font-weight: 600; color: #58a6ff; }
+        }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <div class="header-content">
-        <h1>ADA-IR Leads Tracker</h1>
-        <div class="search-wrapper">
-          <input type="search" class="search-input" id="searchInput" placeholder="Filter by company, sector, location..." aria-label="Filter leads">
+    <div class="container">
+        <header>
+            <h1>📊 ada-ir.com Daily Lead Tracker</h1>
+            <p class="subtitle">Emissions Monitoring Leads — Malaysia Market</p>
+            <div class="meta">
+                <span>📅 18 June 2026</span>
+                <span>🕐 Generated: 19:49 MYT</span>
+                <span>🎯 10 Leads</span>
+            </div>
+        </header>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-value">10</div>
+                <div class="stat-label">Total Leads</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">7</div>
+                <div class="stat-label">High Score (≥70)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">8</div>
+                <div class="stat-label">States Covered</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">8</div>
+                <div class="stat-label">Industries</div>
+            </div>
         </div>
-        <button class="theme-toggle-btn" id="themeToggleBtn" type="button" aria-label="Toggle dark mode">🌙 Dark Mode</button>
-        <button class="export-btn" id="exportBtn" aria-label="Export to CSV">Export CSV</button>
-      </div>
-    </header>
 
-    <!-- Pull to refresh indicator -->
-    <div class="pull-to-refresh" id="pullToRefresh" aria-hidden="true">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 8px; animation: spin 1s linear infinite;">
-        <path d="M23 4v6h-6M1 20v-6h6"/>
-        <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
-      </svg>
-      <span id="pullText">Pull to refresh</span>
-    </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Company</th>
+                    <th>Contact / Title</th>
+                    <th>Location</th>
+                    <th>Industry</th>
+                    <th>Size</th>
+                    <th>Score</th>
+                    <th>Est. Emissions</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td><strong>Bumi Chemicals</strong></td>
+                    <td>Ng Ng<br><small style="color:#8b949e">Compliance Manager</small></td>
+                    <td>Melaka City, Melaka</td>
+                    <td>Textile</td>
+                    <td>Mid-Market (200-1000 employees)</td>
+                    <td><span class="lead-score score-high">70</span></td>
+                    <td>5,202 tCO₂e/yr</td>
+                    <td><button class="expand-btn" onclick="toggleDetails(1)">Details ▼</button></td>
+                </tr>
+                <tr class="details" id="detail-1">
+                    <td colspan="9" class="detail-cell">
+                        <div class="detail-grid">
+                            <div class="detail-item">
+                                <div class="detail-label">Pain Point</div>
+                                <div class="detail-value">Optimizing energy costs through emissions monitoring and reduction</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Email</div>
+                                <div class="detail-value">ng.ng@gmail.com</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Phone</div>
+                                <div class="detail-value">+60 18-610 6661</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Lead Score</div>
+                                <div class="detail-value">70/100</div>
+                            </div>
+                        </div>
+                        <div class="tab-buttons">
+                            <button class="tab-btn active" onclick="showTab(1, 'email')">📧 Email</button>
+                            <button class="tab-btn" onclick="showTab(1, 'linkedin')">💼 LinkedIn</button>
+                            <button class="tab-btn" onclick="showTab(1, 'whatsapp')">💬 WhatsApp</button>
+                        </div>
+                        <div class="tab-content active" id="tab-1-email">
+                            <div class="template-box">Subject: Emissions monitoring for Bumi Chemicals — Malaysia compliance & cost savings
 
-    <div class="table-wrapper">
-      <table id="leadsTable" role="grid" aria-label="Leads data">
-        <thead>
-          <tr>
-            <th scope="col">#</th>
-            <th scope="col">Company</th>
-            <th scope="col">Sector</th>
-            <th scope="col">Location</th>
-            <th scope="col">Status</th>
-            <th scope="col">Actions</th>
-          </tr>
-        </thead>
-        <tbody id="leadsBody"></tbody>
-      </table>
-    </div>
+Hi Ng,
 
-    <div class="no-results" id="noResults" aria-live="polite">No leads match your filter</div>
-  </div>
+I noticed Bumi Chemicals operates in Textile in Melaka City — an area where Malaysia's tightening emissions regulations (EQA 1974, carbon pricing, Bursa ESG mandates) are creating both compliance urgency and cost-saving opportunities.
 
-  <!-- Modal Overlay -->
-  <div class="modal-overlay" id="modalOverlay" aria-hidden="true"></div>
-
-  <!-- Bottom Sheet Modal -->
-  <div class="modal-sheet" id="modalSheet" role="dialog" aria-modal="true" aria-labelledby="modalCompany" aria-hidden="true">
-    <div class="modal-handle"></div>
-    <div class="modal-header">
-      <div>
-        <h2 id="modalCompany" class="modal-company"></h2>
-        <span id="modalSector" class="modal-sector sector-badge"></span>
-      </div>
-      <button class="modal-close" id="modalClose" aria-label="Close details">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <line x1="18" y1="6" x2="6" y2="18"></line>
-          <line x1="6" y1="6" x2="18" y2="18"></line>
-        </svg>
-      </button>
-    </div>
-
-    <div class="modal-grid">
-      <div class="modal-field">
-        <div class="modal-label">Location</div>
-        <div id="modalLocation" class="modal-value"></div>
-      </div>
-      <div class="modal-field">
-        <div class="modal-label">Status</div>
-        <div class="modal-status-row">
-          <select id="modalStatus" class="status-select modal-status-select" aria-label="Lead status"></select>
-        </div>
-      </div>
-      <div class="modal-field full-width">
-        <div class="modal-label">Contact Email</div>
-        <div id="modalEmail" class="modal-value"></div>
-      </div>
-      <div class="modal-field full-width">
-        <div class="modal-label">Contact Phone</div>
-        <div id="modalPhone" class="modal-value"></div>
-      </div>
-      <div class="modal-field full-width">
-        <div class="modal-label">Pain Point</div>
-        <div id="modalPainPoint" class="modal-value"></div>
-      </div>
-      <div class="modal-field full-width">
-        <div class="modal-label">Est. Annual Emissions</div>
-        <div id="modalEmissions" class="modal-value"></div>
-      </div>
-      <div class="modal-field full-width">
-        <div class="modal-label">Lead Score</div>
-        <div id="modalScore" class="modal-value"></div>
-      </div>
-    </div>
-
-    <!-- Outreach Templates Tabs -->
-    <div class="modal-tabs" role="tablist" aria-label="Outreach templates">
-      <button class="modal-tab active" role="tab" aria-selected="true" aria-controls="tab-email" id="tab-btn-email" data-tab="email">📧 Email</button>
-      <button class="modal-tab" role="tab" aria-selected="false" aria-controls="tab-linkedin" id="tab-btn-linkedin" data-tab="linkedin">💼 LinkedIn</button>
-      <button class="modal-tab" role="tab" aria-selected="false" aria-controls="tab-whatsapp" id="tab-btn-whatsapp" data-tab="whatsapp">💬 WhatsApp</button>
-    </div>
-
-    <div class="modal-tab-panel active" id="tab-email" role="tabpanel" aria-labelledby="tab-btn-email">
-      <div class="template-actions">
-        <button type="button" class="copy-template-btn" data-copy-target="templateEmail">Copy Email</button>
-      </div>
-      <div class="template-box" id="templateEmail"></div>
-    </div>
-    <div class="modal-tab-panel" id="tab-linkedin" role="tabpanel" aria-labelledby="tab-btn-linkedin">
-      <div class="template-actions">
-        <button type="button" class="copy-template-btn" data-copy-target="templateLinkedin">Copy LinkedIn</button>
-      </div>
-      <div class="template-box" id="templateLinkedin"></div>
-    </div>
-    <div class="modal-tab-panel" id="tab-whatsapp" role="tabpanel" aria-labelledby="tab-btn-whatsapp">
-      <div class="template-actions">
-        <button type="button" class="copy-template-btn" data-copy-target="templateWhatsapp">Copy WhatsApp</button>
-      </div>
-      <div class="template-box" id="templateWhatsapp"></div>
-    </div>
-  </div>
-
-  <!-- Tweaks Panel -->
-  <div class="tweaks-toggle">
-    <button class="tweaks-btn" id="tweaksBtn" aria-label="UI Tweaks" aria-expanded="false" aria-controls="tweaksPanel">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="12" cy="12" r="3"></circle>
-        <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 21.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"></path>
-      </svg>
-    </button>
-    <div class="tweaks-panel" id="tweaksPanel" role="region" aria-label="UI Tweaks">
-      <div class="tweaks-title">Tweaks</div>
-      <div class="tweaks-section">
-        <label class="tweaks-label">Theme</label>
-        <select class="tweaks-select" id="tweakTheme">
-          <option value="light">Light</option>
-          <option value="dark">Dark</option>
-          <option value="system">System</option>
-        </select>
-      </div>
-      <div class="tweaks-section">
-        <label class="tweaks-label">Density</label>
-        <select class="tweaks-select" id="tweakDensity">
-          <option value="comfortable">Comfortable</option>
-          <option value="compact">Compact</option>
-          <option value="spacious">Spacious</option>
-        </select>
-      </div>
-      <div class="tweaks-section">
-        <label class="tweaks-checkbox">
-          <input type="checkbox" id="tweakMotion" checked>
-          <span>Motion Enabled</span>
-        </label>
-      </div>
-      <div class="tweaks-section">
-        <label class="tweaks-checkbox">
-          <input type="checkbox" id="tweakHaptics" checked>
-          <span>Haptic Feedback</span>
-        </label>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    // ===== DATA =====
-    const LEADS = [
-      { company: "Malayan Cement (YTL Cement)", sector: "Cement", location: "Kuala Lumpur", status: "New", email: "contact@malayancement.com.my", phone: "+60 3-2282 8888", painPoint: "Need to comply with Malaysia's Environmental Quality Act 1974 amendments", emissions: "1,250,000", score: 85 },
-      { company: "Hume Cement", sector: "Cement", location: "Gopeng, Perak", status: "New", email: "info@humecement.com", phone: "+60 5-351 8888", painPoint: "Preparing for mandatory carbon reporting under Bursa Malaysia sustainability requirements", emissions: "980,000", score: 78 },
-      { company: "CIMA Cement", sector: "Cement", location: "Keramat Pulai, Perak", status: "New", email: "sales@cimacement.com", phone: "+60 5-377 8888", painPoint: "Seeking to reduce carbon tax exposure under Malaysia's upcoming carbon pricing mechanism", emissions: "890,000", score: 72 },
-      { company: "Tasek Cement", sector: "Cement", location: "Ipoh, Perak", status: "New", email: "contact@tasekcement.com", phone: "+60 5-242 8888", painPoint: "Client/export market demands for Scope 1, 2, 3 emissions transparency", emissions: "1,100,000", score: 88 },
-      { company: "Southern Steel (Hong Leong)", sector: "Steel", location: "Prai, Penang", status: "New", email: "info@southernsteel.com", phone: "+60 4-398 8888", painPoint: "ESG reporting requirements from parent company or investors", emissions: "650,000", score: 82 },
-      { company: "Perwaja Steel", sector: "Steel", location: "Kemaman, Terengganu", status: "New", email: "contact@perwaja.com.my", phone: "+60 9-863 8888", painPoint: "Optimizing energy costs through emissions monitoring and reduction", emissions: "720,000", score: 75 },
-      { company: "Mega Steel", sector: "Steel", location: "Banting, Selangor", status: "New", email: "sales@megasteel.com.my", phone: "+60 3-3179 8888", painPoint: "Need real-time CEMS data integration", emissions: "580,000", score: 70 },
-      { company: "Fletcher Steel", sector: "Steel", location: "Shah Alam, Selangor", status: "New", email: "info@fletchersteel.com", phone: "+60 3-5542 8888", painPoint: "Struggling with manual spreadsheet-based emissions tracking", emissions: "450,000", score: 68 },
-      { company: "FGV Holdings", sector: "Palm Oil", location: "Kuala Lumpur", status: "New", email: "contact@fgvholdings.com", phone: "+60 3-2052 8888", painPoint: "Require third-party verification for sustainability certifications (MSPO, RSPO, ISO 14064)", emissions: "380,000", score: 86 },
-      { company: "Sime Darby Plantation", sector: "Palm Oil", location: "Ara Damansara, Selangor", status: "New", email: "info@simedarbyplantation.com", phone: "+60 3-7848 8888", painPoint: "Board-level pressure to set science-based targets (SBTi)", emissions: "1,450,000", score: 92 },
-      { company: "IOI Corporation", sector: "Palm Oil", location: "Putrajaya", status: "New", email: "contact@ioigroup.com", phone: "+60 3-8947 8888", painPoint: "Need to comply with Malaysia's Environmental Quality Act 1974 amendments", emissions: "1,200,000", score: 89 },
-      { company: "Kuala Lumpur Kepong (KLK)", sector: "Palm Oil", location: "Kuala Lumpur", status: "New", email: "info@klk.com.my", phone: "+60 3-2164 8888", painPoint: "Preparing for mandatory carbon reporting under Bursa Malaysia sustainability requirements", emissions: "980,000", score: 84 },
-      { company: "Genting Plantations", sector: "Palm Oil", location: "Kuala Lumpur", status: "New", email: "contact@gentingplantations.com", phone: "+60 3-2178 8888", painPoint: "Seeking to reduce carbon tax exposure under Malaysia's upcoming carbon pricing mechanism", emissions: "670,000", score: 76 },
-      { company: "TDM Berhad", sector: "Palm Oil", location: "Kuala Terengganu", status: "New", email: "info@tdmberhad.com.my", phone: "+60 9-624 8888", painPoint: "Client/export market demands for Scope 1, 2, 3 emissions transparency", emissions: "540,000", score: 71 },
-      { company: "Petronas Chemicals", sector: "Petrochemical", location: "Kuala Lumpur", status: "New", email: "contact@petronaschemicals.com.my", phone: "+60 3-2052 8888", painPoint: "ESG reporting requirements from parent company or investors", emissions: "2,100,000", score: 94 },
-      { company: "BASF Petronas Chemicals", sector: "Petrochemical", location: "Gebeng, Pahang", status: "New", email: "info@basfpetronas.com", phone: "+60 9-583 8888", painPoint: "Optimizing energy costs through emissions monitoring and reduction", emissions: "1,850,000", score: 90 },
-      { company: "PETRONAS Dagangan", sector: "Petrochemical", location: "Kuala Lumpur", status: "New", email: "contact@petronasdagangan.com.my", phone: "+60 3-2052 8888", painPoint: "Need real-time CEMS data integration", emissions: "1,650,000", score: 88 },
-      { company: "Lotte Chemical Titan", sector: "Petrochemical", location: "Pasir Gudang, Johor", status: "New", email: "info@lottechemicaltitan.com", phone: "+60 7-251 8888", painPoint: "Struggling with manual spreadsheet-based emissions tracking", emissions: "1,320,000", score: 83 },
-      { company: "Scientex", sector: "Petrochemical", location: "Shah Alam, Selangor", status: "New", email: "contact@scientex.com.my", phone: "+60 3-5191 8888", painPoint: "Require third-party verification for sustainability certifications (MSPO, RSPO, ISO 14064)", emissions: "980,000", score: 79 },
-      { company: "Scomi Group", sector: "Petrochemical", location: "Kuala Lumpur", status: "New", email: "info@scomigroup.com", phone: "+60 3-2163 8888", painPoint: "Board-level pressure to set science-based targets (SBTi)", emissions: "720,000", score: 74 },
-    ];
-
-    const STATUS_OPTIONS = ["New", "Contacted", "Qualified", "Proposal", "Won", "Lost"];
-    const STATUS_COLORS = {
-      "New": "var(--text-muted)", "Contacted": "var(--accent)", "Qualified": "var(--palm)",
-      "Proposal": "var(--petrochem)", "Won": "var(--won)", "Lost": "var(--lost)"
-    };
-    const STATUS_SWIPE_CLASSES = {
-      "New": "swipe-new", "Contacted": "swipe-contacted", "Qualified": "swipe-qualified",
-      "Proposal": "swipe-proposal", "Won": "swipe-won", "Lost": "swipe-lost"
-    };
-
-    const sectorClassMap = {
-      "Cement": "sector-cement", "Steel": "sector-steel",
-      "Palm Oil": "sector-palm", "Petrochemical": "sector-petrochem"
-    };
-
-    // ===== OUTREACH TEMPLATES =====
-    function getTemplates(lead) {
-      const firstName = lead.company.split(' ')[0];
-      return {
-        email: `Subject: Emissions monitoring for ${lead.company} — Malaysia compliance & cost savings
-
-Hi ${firstName},
-
-I noticed ${lead.company} operates in ${lead.sector} in ${lead.location} — an area where Malaysia's tightening emissions regulations (EQA 1974, carbon pricing, Bursa ESG mandates) are creating both compliance urgency and cost-saving opportunities.
-
-We help ${lead.sector} companies in Malaysia:
+We help Textile companies in Malaysia:
 - Automate CEMS data collection & regulatory reporting (DOE, Bursa, parent co.)
 - Identify 15-30% energy savings through real-time emissions optimization
 - Prepare for carbon tax / CBAM exposure with auditable Scope 1-3 baselines
 
-ada-ir.com clients in ${lead.location.split(',')[0]} typically see ROI within 6 months on monitoring infrastructure.
+ada-ir.com clients in Melaka typically see ROI within 6 months on monitoring infrastructure.
 
 Open to a 15-min call this week to map your current reporting stack vs. new requirements?
 
 Best,
 [Your Name]
-ada-ir.com | Emissions Intelligence for Malaysia`,
-        linkedin: `Hi ${firstName}, saw ${lead.company}'s work in ${lead.sector} in ${lead.location}. With Malaysia's new carbon pricing and Bursa ESG mandates kicking in, a lot of ${lead.sector} leaders are scrambling on emissions baselines. We're helping firms automate CEMS→reporting pipelines and cut energy costs 15-30%. Worth a quick chat? Happy to share a Malaysia-specific compliance checklist.`,
-        whatsapp: `Hi ${firstName}, [Your Name] from ada-ir.com. We help ${lead.sector} companies automate emissions monitoring for Malaysia's new carbon regulations (EQA, Bursa, carbon tax). Seeing 15-30% energy savings for similar ops in ${lead.location}. 10-min call worth it to see your compliance gap? I can send a 1-pager on what's changing for ${lead.sector} in Malaysia.`
-      };
-    }
+ada-ir.com | Emissions Intelligence for Malaysia</div>
+                        </div>
+                        <div class="tab-content" id="tab-1-linkedin">
+                            <div class="template-box">Hi Ng, saw Bumi Chemicals's work in Textile in Melaka City. With Malaysia's new carbon pricing and Bursa ESG mandates kicking in, a lot of Textile leaders in Melaka are scrambling on emissions baselines. We're helping Mid-Market (200-1000 employees) firms automate CEMS→reporting pipelines and cut energy costs 15-30%. Worth a quick chat? Happy to share a Malaysia-specific compliance checklist.</div>
+                        </div>
+                        <div class="tab-content" id="tab-1-whatsapp">
+                            <div class="template-box">Hi Ng, [Your Name] from ada-ir.com. We help Textile companies in Melaka automate emissions monitoring for Malaysia's new carbon regulations (EQA, Bursa, carbon tax). Seeing 15-30% energy savings for similar Mid-Market (200-1000 employees) ops in Melaka City. 10-min call worth it to see your compliance gap? I can send a 1-pager on what's changing for Textile in Malaysia.</div>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td><strong>Cemerlang Chemicals</strong></td>
+                    <td>Tan Kumar<br><small style="color:#8b949e">Chief Sustainability Officer</small></td>
+                    <td>Temerloh, Pahang</td>
+                    <td>Cement & Construction</td>
+                    <td>SME (50-200 employees)</td>
+                    <td><span class="lead-score score-high">75</span></td>
+                    <td>34,745 tCO₂e/yr</td>
+                    <td><button class="expand-btn" onclick="toggleDetails(2)">Details ▼</button></td>
+                </tr>
+                <tr class="details" id="detail-2">
+                    <td colspan="9" class="detail-cell">
+                        <div class="detail-grid">
+                            <div class="detail-item">
+                                <div class="detail-label">Pain Point</div>
+                                <div class="detail-value">Need real-time CEMS (Continuous Emissions Monitoring Systems) data integration</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Email</div>
+                                <div class="detail-value">tan.kumar@gmail.com</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Phone</div>
+                                <div class="detail-value">+60 13-815 1537</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Lead Score</div>
+                                <div class="detail-value">75/100</div>
+                            </div>
+                        </div>
+                        <div class="tab-buttons">
+                            <button class="tab-btn active" onclick="showTab(2, 'email')">📧 Email</button>
+                            <button class="tab-btn" onclick="showTab(2, 'linkedin')">💼 LinkedIn</button>
+                            <button class="tab-btn" onclick="showTab(2, 'whatsapp')">💬 WhatsApp</button>
+                        </div>
+                        <div class="tab-content active" id="tab-2-email">
+                            <div class="template-box">Subject: Emissions monitoring for Cemerlang Chemicals — Malaysia compliance & cost savings
 
-    // ===== UTILITIES =====
-    function escapeHtml(text) {
-      const div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
-    }
+Hi Tan,
 
-    function escapeCsv(text) {
-      if (text.includes(',') || text.includes('"') || text.includes('\n')) {
-        return '"' + text.replace(/"/g, '""') + '"';
-      }
-      return text;
-    }
+I noticed Cemerlang Chemicals operates in Cement & Construction in Temerloh — an area where Malaysia's tightening emissions regulations (EQA 1974, carbon pricing, Bursa ESG mandates) are creating both compliance urgency and cost-saving opportunities.
 
-    function vibrate(pattern) {
-      if (tweakHaptics.checked && navigator.vibrate) {
-        navigator.vibrate(pattern);
-      }
-    }
+We help Cement & Construction companies in Malaysia:
+- Automate CEMS data collection & regulatory reporting (DOE, Bursa, parent co.)
+- Identify 15-30% energy savings through real-time emissions optimization
+- Prepare for carbon tax / CBAM exposure with auditable Scope 1-3 baselines
 
-    // ===== RENDER LEADS =====
-    function renderLeads(filter = '') {
-      const tbody = document.getElementById('leadsBody');
-      const noResults = document.getElementById('noResults');
-      const searchTerm = filter.toLowerCase().trim();
-      let visibleCount = 0;
+ada-ir.com clients in Pahang typically see ROI within 6 months on monitoring infrastructure.
 
-      tbody.innerHTML = LEADS.map((lead, index) => {
-        const matches = !searchTerm ||
-          lead.company.toLowerCase().includes(searchTerm) ||
-          lead.sector.toLowerCase().includes(searchTerm) ||
-          lead.location.toLowerCase().includes(searchTerm) ||
-          lead.status.toLowerCase().includes(searchTerm);
+Open to a 15-min call this week to map your current reporting stack vs. new requirements?
 
-        if (matches) visibleCount++;
+Best,
+[Your Name]
+ada-ir.com | Emissions Intelligence for Malaysia</div>
+                        </div>
+                        <div class="tab-content" id="tab-2-linkedin">
+                            <div class="template-box">Hi Tan, saw Cemerlang Chemicals's work in Cement & Construction in Temerloh. With Malaysia's new carbon pricing and Bursa ESG mandates kicking in, a lot of Cement & Construction leaders in Pahang are scrambling on emissions baselines. We're helping SME (50-200 employees) firms automate CEMS→reporting pipelines and cut energy costs 15-30%. Worth a quick chat? Happy to share a Malaysia-specific compliance checklist.</div>
+                        </div>
+                        <div class="tab-content" id="tab-2-whatsapp">
+                            <div class="template-box">Hi Tan, [Your Name] from ada-ir.com. We help Cement & Construction companies in Pahang automate emissions monitoring for Malaysia's new carbon regulations (EQA, Bursa, carbon tax). Seeing 15-30% energy savings for similar SME (50-200 employees) ops in Temerloh. 10-min call worth it to see your compliance gap? I can send a 1-pager on what's changing for Cement & Construction in Malaysia.</div>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>3</td>
+                    <td><strong>Kuala Resources</strong></td>
+                    <td>Chen Lee<br><small style="color:#8b949e">EHS Manager</small></td>
+                    <td>Klang, Selangor</td>
+                    <td>Palm Oil Processing</td>
+                    <td>SME (50-200 employees)</td>
+                    <td><span class="lead-score score-high">82</span></td>
+                    <td>24,179 tCO₂e/yr</td>
+                    <td><button class="expand-btn" onclick="toggleDetails(3)">Details ▼</button></td>
+                </tr>
+                <tr class="details" id="detail-3">
+                    <td colspan="9" class="detail-cell">
+                        <div class="detail-grid">
+                            <div class="detail-item">
+                                <div class="detail-label">Pain Point</div>
+                                <div class="detail-value">ESG reporting requirements from parent company or investors</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Email</div>
+                                <div class="detail-value">chen.lee@gmail.com</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Phone</div>
+                                <div class="detail-value">+60 13-650 3294</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Lead Score</div>
+                                <div class="detail-value">82/100</div>
+                            </div>
+                        </div>
+                        <div class="tab-buttons">
+                            <button class="tab-btn active" onclick="showTab(3, 'email')">📧 Email</button>
+                            <button class="tab-btn" onclick="showTab(3, 'linkedin')">💼 LinkedIn</button>
+                            <button class="tab-btn" onclick="showTab(3, 'whatsapp')">💬 WhatsApp</button>
+                        </div>
+                        <div class="tab-content active" id="tab-3-email">
+                            <div class="template-box">Subject: Emissions monitoring for Kuala Resources — Malaysia compliance & cost savings
 
-        const sectorClass = sectorClassMap[lead.sector] || '';
-        const statusClass = 'status-' + lead.status.toLowerCase();
-        const swipeClass = STATUS_SWIPE_CLASSES[lead.status] || '';
+Hi Chen,
 
-        const optionsHtml = STATUS_OPTIONS.map(opt =>
-          `<option value="${opt}" ${opt === lead.status ? 'selected' : ''}>${opt}</option>`
-        ).join('');
+I noticed Kuala Resources operates in Palm Oil Processing in Klang — an area where Malaysia's tightening emissions regulations (EQA 1974, carbon pricing, Bursa ESG mandates) are creating both compliance urgency and cost-saving opportunities.
 
-        return `
-          <tr class="${matches ? 'visible' : 'hidden'} ${swipeClass}" data-index="${index}" data-company="${escapeHtml(lead.company)}">
-            <td class="num-col" data-label="#">${index + 1}</td>
-            <td class="company-col" data-label="Company">${escapeHtml(lead.company)}</td>
-            <td data-label="Sector"><span class="sector-badge ${sectorClass}">${escapeHtml(lead.sector)}</span></td>
-            <td class="location-col" data-label="Location">${escapeHtml(lead.location)}</td>
-            <td data-label="Status">
-              <select class="status-select ${statusClass}" data-index="${index}" aria-label="Status for ${escapeHtml(lead.company)}">
-                ${optionsHtml}
-              </select>
-            </td>
-            <td class="actions-col" data-label="Actions"></td>
-          </tr>
-        `;
-      }).join('');
+We help Palm Oil Processing companies in Malaysia:
+- Automate CEMS data collection & regulatory reporting (DOE, Bursa, parent co.)
+- Identify 15-30% energy savings through real-time emissions optimization
+- Prepare for carbon tax / CBAM exposure with auditable Scope 1-3 baselines
 
-      noResults.classList.toggle('visible', visibleCount === 0);
+ada-ir.com clients in Selangor typically see ROI within 6 months on monitoring infrastructure.
 
-      document.querySelectorAll('.status-select').forEach(select => {
-        select.addEventListener('change', handleStatusChange);
-      });
+Open to a 15-min call this week to map your current reporting stack vs. new requirements?
 
-      // Mobile: tap card to open modal
-      if (window.innerWidth < 640) {
-        document.querySelectorAll('tbody tr.visible').forEach(row => {
-          row.addEventListener('click', e => {
-            if (e.target.tagName !== 'SELECT') {
-              openModal(parseInt(row.dataset.index, 10));
-            }
-          });
-        });
-      } else {
-        // Desktop: click row to open modal
-        document.querySelectorAll('tbody tr.visible').forEach(row => {
-          row.style.cursor = 'pointer';
-          row.addEventListener('click', e => {
-            if (e.target.tagName !== 'SELECT') {
-              openModal(parseInt(row.dataset.index, 10));
-            }
-          });
-        });
-      }
+Best,
+[Your Name]
+ada-ir.com | Emissions Intelligence for Malaysia</div>
+                        </div>
+                        <div class="tab-content" id="tab-3-linkedin">
+                            <div class="template-box">Hi Chen, saw Kuala Resources's work in Palm Oil Processing in Klang. With Malaysia's new carbon pricing and Bursa ESG mandates kicking in, a lot of Palm Oil Processing leaders in Selangor are scrambling on emissions baselines. We're helping SME (50-200 employees) firms automate CEMS→reporting pipelines and cut energy costs 15-30%. Worth a quick chat? Happy to share a Malaysia-specific compliance checklist.</div>
+                        </div>
+                        <div class="tab-content" id="tab-3-whatsapp">
+                            <div class="template-box">Hi Chen, [Your Name] from ada-ir.com. We help Palm Oil Processing companies in Selangor automate emissions monitoring for Malaysia's new carbon regulations (EQA, Bursa, carbon tax). Seeing 15-30% energy savings for similar SME (50-200 employees) ops in Klang. 10-min call worth it to see your compliance gap? I can send a 1-pager on what's changing for Palm Oil Processing in Malaysia.</div>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>4</td>
+                    <td><strong>Mewah Industries</strong></td>
+                    <td>Aisha Binti Mohamed<br><small style="color:#8b949e">EHS Manager</small></td>
+                    <td>Sibu, Sarawak</td>
+                    <td>Automotive</td>
+                    <td>SME (50-200 employees)</td>
+                    <td><span class="lead-score score-high">90</span></td>
+                    <td>12,272 tCO₂e/yr</td>
+                    <td><button class="expand-btn" onclick="toggleDetails(4)">Details ▼</button></td>
+                </tr>
+                <tr class="details" id="detail-4">
+                    <td colspan="9" class="detail-cell">
+                        <div class="detail-grid">
+                            <div class="detail-item">
+                                <div class="detail-label">Pain Point</div>
+                                <div class="detail-value">Client/export market demands for Scope 1, 2, 3 emissions transparency</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Email</div>
+                                <div class="detail-value">aisha.mohamed@yahoo.com</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Phone</div>
+                                <div class="detail-value">+60 19-370 5712</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Lead Score</div>
+                                <div class="detail-value">90/100</div>
+                            </div>
+                        </div>
+                        <div class="tab-buttons">
+                            <button class="tab-btn active" onclick="showTab(4, 'email')">📧 Email</button>
+                            <button class="tab-btn" onclick="showTab(4, 'linkedin')">💼 LinkedIn</button>
+                            <button class="tab-btn" onclick="showTab(4, 'whatsapp')">💬 WhatsApp</button>
+                        </div>
+                        <div class="tab-content active" id="tab-4-email">
+                            <div class="template-box">Subject: Emissions monitoring for Mewah Industries — Malaysia compliance & cost savings
 
-      // Swipe gesture for mobile
-      setupSwipeGestures();
-    }
+Hi Aisha,
 
-    // ===== STATUS CHANGE =====
-    function handleStatusChange(e) {
-      const index = parseInt(e.target.dataset.index, 10);
-      const newStatus = e.target.value;
-      LEADS[index].status = newStatus;
+I noticed Mewah Industries operates in Automotive in Sibu — an area where Malaysia's tightening emissions regulations (EQA 1974, carbon pricing, Bursa ESG mandates) are creating both compliance urgency and cost-saving opportunities.
 
-      const row = e.target.closest('tr');
-      const statusSelect = row.querySelector('.status-select');
-      statusSelect.className = 'status-select ' + 'status-' + newStatus.toLowerCase();
+We help Automotive companies in Malaysia:
+- Automate CEMS data collection & regulatory reporting (DOE, Bursa, parent co.)
+- Identify 15-30% energy savings through real-time emissions optimization
+- Prepare for carbon tax / CBAM exposure with auditable Scope 1-3 baselines
 
-      // Update swipe class
-      row.className = row.className.replace(/swipe-\w+/g, '');
-      row.classList.add(STATUS_SWIPE_CLASSES[newStatus] || '');
+ada-ir.com clients in Sarawak typically see ROI within 6 months on monitoring infrastructure.
 
-      vibrate(10);
+Open to a 15-min call this week to map your current reporting stack vs. new requirements?
 
-      // If modal is open for this lead, update it
-      if (modalLeadIndex === index) {
-        document.getElementById('modalStatus').value = newStatus;
-        document.getElementById('modalSector').className = 'modal-sector sector-badge ' + sectorClassMap[LEADS[index].sector];
-      }
-    }
+Best,
+[Your Name]
+ada-ir.com | Emissions Intelligence for Malaysia</div>
+                        </div>
+                        <div class="tab-content" id="tab-4-linkedin">
+                            <div class="template-box">Hi Aisha, saw Mewah Industries's work in Automotive in Sibu. With Malaysia's new carbon pricing and Bursa ESG mandates kicking in, a lot of Automotive leaders in Sarawak are scrambling on emissions baselines. We're helping SME (50-200 employees) firms automate CEMS→reporting pipelines and cut energy costs 15-30%. Worth a quick chat? Happy to share a Malaysia-specific compliance checklist.</div>
+                        </div>
+                        <div class="tab-content" id="tab-4-whatsapp">
+                            <div class="template-box">Hi Aisha, [Your Name] from ada-ir.com. We help Automotive companies in Sarawak automate emissions monitoring for Malaysia's new carbon regulations (EQA, Bursa, carbon tax). Seeing 15-30% energy savings for similar SME (50-200 employees) ops in Sibu. 10-min call worth it to see your compliance gap? I can send a 1-pager on what's changing for Automotive in Malaysia.</div>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>5</td>
+                    <td><strong>Cemerlang Corporation</strong></td>
+                    <td>Siti Binti Hassan<br><small style="color:#8b949e">Facilities Manager</small></td>
+                    <td>Kemaman, Terengganu</td>
+                    <td>Manufacturing</td>
+                    <td>Mid-Market (200-1000 employees)</td>
+                    <td><span class="lead-score score-high">83</span></td>
+                    <td>32,378 tCO₂e/yr</td>
+                    <td><button class="expand-btn" onclick="toggleDetails(5)">Details ▼</button></td>
+                </tr>
+                <tr class="details" id="detail-5">
+                    <td colspan="9" class="detail-cell">
+                        <div class="detail-grid">
+                            <div class="detail-item">
+                                <div class="detail-label">Pain Point</div>
+                                <div class="detail-value">Preparing for mandatory carbon reporting under Bursa Malaysia sustainability requirements</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Email</div>
+                                <div class="detail-value">siti.hassan@gmail.com</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Phone</div>
+                                <div class="detail-value">+60 15-104 4573</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Lead Score</div>
+                                <div class="detail-value">83/100</div>
+                            </div>
+                        </div>
+                        <div class="tab-buttons">
+                            <button class="tab-btn active" onclick="showTab(5, 'email')">📧 Email</button>
+                            <button class="tab-btn" onclick="showTab(5, 'linkedin')">💼 LinkedIn</button>
+                            <button class="tab-btn" onclick="showTab(5, 'whatsapp')">💬 WhatsApp</button>
+                        </div>
+                        <div class="tab-content active" id="tab-5-email">
+                            <div class="template-box">Subject: Emissions monitoring for Cemerlang Corporation — Malaysia compliance & cost savings
 
-    // ===== SWIPE GESTURES =====
-    let swipeStartX = 0;
-    let swipeCurrentX = 0;
-    let swipeRow = null;
-    let swipeThreshold = 80;
+Hi Siti,
 
-    function setupSwipeGestures() {
-      if (window.innerWidth >= 640) return;
+I noticed Cemerlang Corporation operates in Manufacturing in Kemaman — an area where Malaysia's tightening emissions regulations (EQA 1974, carbon pricing, Bursa ESG mandates) are creating both compliance urgency and cost-saving opportunities.
 
-      document.querySelectorAll('tbody tr.visible').forEach(row => {
-        row.removeEventListener('touchstart', handleTouchStart);
-        row.removeEventListener('touchmove', handleTouchMove);
-        row.removeEventListener('touchend', handleTouchEnd);
-        row.addEventListener('touchstart', handleTouchStart, { passive: true });
-        row.addEventListener('touchmove', handleTouchMove, { passive: false });
-        row.addEventListener('touchend', handleTouchEnd, { passive: true });
-      });
-    }
+We help Manufacturing companies in Malaysia:
+- Automate CEMS data collection & regulatory reporting (DOE, Bursa, parent co.)
+- Identify 15-30% energy savings through real-time emissions optimization
+- Prepare for carbon tax / CBAM exposure with auditable Scope 1-3 baselines
 
-    function handleTouchStart(e) {
-      swipeStartX = e.touches[0].clientX;
-      swipeRow = e.currentTarget;
-      swipeRow.classList.add('swiping');
-    }
+ada-ir.com clients in Terengganu typically see ROI within 6 months on monitoring infrastructure.
 
-    function handleTouchMove(e) {
-      if (!swipeRow) return;
-      swipeCurrentX = e.touches[0].clientX;
-      const deltaX = swipeCurrentX - swipeStartX;
+Open to a 15-min call this week to map your current reporting stack vs. new requirements?
 
-      if (deltaX < 0) {
-        e.preventDefault();
-        const progress = Math.min(Math.abs(deltaX) / 200, 1);
-        swipeRow.style.transform = `translateX(${deltaX}px)`;
-        swipeRow.style.opacity = 1 - progress * 0.3;
-      }
-    }
+Best,
+[Your Name]
+ada-ir.com | Emissions Intelligence for Malaysia</div>
+                        </div>
+                        <div class="tab-content" id="tab-5-linkedin">
+                            <div class="template-box">Hi Siti, saw Cemerlang Corporation's work in Manufacturing in Kemaman. With Malaysia's new carbon pricing and Bursa ESG mandates kicking in, a lot of Manufacturing leaders in Terengganu are scrambling on emissions baselines. We're helping Mid-Market (200-1000 employees) firms automate CEMS→reporting pipelines and cut energy costs 15-30%. Worth a quick chat? Happy to share a Malaysia-specific compliance checklist.</div>
+                        </div>
+                        <div class="tab-content" id="tab-5-whatsapp">
+                            <div class="template-box">Hi Siti, [Your Name] from ada-ir.com. We help Manufacturing companies in Terengganu automate emissions monitoring for Malaysia's new carbon regulations (EQA, Bursa, carbon tax). Seeing 15-30% energy savings for similar Mid-Market (200-1000 employees) ops in Kemaman. 10-min call worth it to see your compliance gap? I can send a 1-pager on what's changing for Manufacturing in Malaysia.</div>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>6</td>
+                    <td><strong>Cemerlang Industries</strong></td>
+                    <td>Wei Singh<br><small style="color:#8b949e">Energy Manager</small></td>
+                    <td>Sandakan, Sabah</td>
+                    <td>Oil & Gas</td>
+                    <td>Large Enterprise (>1000 employees)</td>
+                    <td><span class="lead-score score-med">58</span></td>
+                    <td>269,390 tCO₂e/yr</td>
+                    <td><button class="expand-btn" onclick="toggleDetails(6)">Details ▼</button></td>
+                </tr>
+                <tr class="details" id="detail-6">
+                    <td colspan="9" class="detail-cell">
+                        <div class="detail-grid">
+                            <div class="detail-item">
+                                <div class="detail-label">Pain Point</div>
+                                <div class="detail-value">Require third-party verification for sustainability certifications (MSPO, RSPO, ISO 14064)</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Email</div>
+                                <div class="detail-value">wei.singh@gmail.com</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Phone</div>
+                                <div class="detail-value">+60 13-774 4625</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Lead Score</div>
+                                <div class="detail-value">58/100</div>
+                            </div>
+                        </div>
+                        <div class="tab-buttons">
+                            <button class="tab-btn active" onclick="showTab(6, 'email')">📧 Email</button>
+                            <button class="tab-btn" onclick="showTab(6, 'linkedin')">💼 LinkedIn</button>
+                            <button class="tab-btn" onclick="showTab(6, 'whatsapp')">💬 WhatsApp</button>
+                        </div>
+                        <div class="tab-content active" id="tab-6-email">
+                            <div class="template-box">Subject: Emissions monitoring for Cemerlang Industries — Malaysia compliance & cost savings
 
-    function handleTouchEnd() {
-      if (!swipeRow) return;
+Hi Wei,
 
-      const deltaX = swipeCurrentX - swipeStartX;
-      const index = parseInt(swipeRow.dataset.index, 10);
+I noticed Cemerlang Industries operates in Oil & Gas in Sandakan — an area where Malaysia's tightening emissions regulations (EQA 1974, carbon pricing, Bursa ESG mandates) are creating both compliance urgency and cost-saving opportunities.
 
-      if (deltaX < -swipeThreshold) {
-        // Swipe left - cycle status
-        const currentStatus = LEADS[index].status;
-        const currentIdx = STATUS_OPTIONS.indexOf(currentStatus);
-        const nextIdx = (currentIdx + 1) % STATUS_OPTIONS.length;
-        const newStatus = STATUS_OPTIONS[nextIdx];
+We help Oil & Gas companies in Malaysia:
+- Automate CEMS data collection & regulatory reporting (DOE, Bursa, parent co.)
+- Identify 15-30% energy savings through real-time emissions optimization
+- Prepare for carbon tax / CBAM exposure with auditable Scope 1-3 baselines
 
-        LEADS[index].status = newStatus;
+ada-ir.com clients in Sabah typically see ROI within 6 months on monitoring infrastructure.
 
-        // Update row
-        const statusSelect = swipeRow.querySelector('.status-select');
-        statusSelect.value = newStatus;
-        statusSelect.className = 'status-select ' + 'status-' + newStatus.toLowerCase();
+Open to a 15-min call this week to map your current reporting stack vs. new requirements?
 
-        swipeRow.className = swipeRow.className.replace(/swipe-\w+/g, '');
-        swipeRow.classList.add(STATUS_SWIPE_CLASSES[newStatus] || '');
+Best,
+[Your Name]
+ada-ir.com | Emissions Intelligence for Malaysia</div>
+                        </div>
+                        <div class="tab-content" id="tab-6-linkedin">
+                            <div class="template-box">Hi Wei, saw Cemerlang Industries's work in Oil & Gas in Sandakan. With Malaysia's new carbon pricing and Bursa ESG mandates kicking in, a lot of Oil & Gas leaders in Sabah are scrambling on emissions baselines. We're helping Large Enterprise (>1000 employees) firms automate CEMS→reporting pipelines and cut energy costs 15-30%. Worth a quick chat? Happy to share a Malaysia-specific compliance checklist.</div>
+                        </div>
+                        <div class="tab-content" id="tab-6-whatsapp">
+                            <div class="template-box">Hi Wei, [Your Name] from ada-ir.com. We help Oil & Gas companies in Sabah automate emissions monitoring for Malaysia's new carbon regulations (EQA, Bursa, carbon tax). Seeing 15-30% energy savings for similar Large Enterprise (>1000 employees) ops in Sandakan. 10-min call worth it to see your compliance gap? I can send a 1-pager on what's changing for Oil & Gas in Malaysia.</div>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>7</td>
+                    <td><strong>Jaya Engineering</strong></td>
+                    <td>Mohd Ibrahim<br><small style="color:#8b949e">VP ESG / Sustainability</small></td>
+                    <td>Kulai, Johor</td>
+                    <td>Textile</td>
+                    <td>SME (50-200 employees)</td>
+                    <td><span class="lead-score score-high">88</span></td>
+                    <td>1,993 tCO₂e/yr</td>
+                    <td><button class="expand-btn" onclick="toggleDetails(7)">Details ▼</button></td>
+                </tr>
+                <tr class="details" id="detail-7">
+                    <td colspan="9" class="detail-cell">
+                        <div class="detail-grid">
+                            <div class="detail-item">
+                                <div class="detail-label">Pain Point</div>
+                                <div class="detail-value">Board-level pressure to set science-based targets (SBTi)</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Email</div>
+                                <div class="detail-value">mohd.ibrahim@outlook.com</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Phone</div>
+                                <div class="detail-value">+60 14-796 8716</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Lead Score</div>
+                                <div class="detail-value">88/100</div>
+                            </div>
+                        </div>
+                        <div class="tab-buttons">
+                            <button class="tab-btn active" onclick="showTab(7, 'email')">📧 Email</button>
+                            <button class="tab-btn" onclick="showTab(7, 'linkedin')">💼 LinkedIn</button>
+                            <button class="tab-btn" onclick="showTab(7, 'whatsapp')">💬 WhatsApp</button>
+                        </div>
+                        <div class="tab-content active" id="tab-7-email">
+                            <div class="template-box">Subject: Emissions monitoring for Jaya Engineering — Malaysia compliance & cost savings
 
-        vibrate([10, 50, 10]);
+Hi Mohd,
 
-        // Update modal if open
-        if (modalLeadIndex === index) {
-          document.getElementById('modalStatus').value = newStatus;
+I noticed Jaya Engineering operates in Textile in Kulai — an area where Malaysia's tightening emissions regulations (EQA 1974, carbon pricing, Bursa ESG mandates) are creating both compliance urgency and cost-saving opportunities.
+
+We help Textile companies in Malaysia:
+- Automate CEMS data collection & regulatory reporting (DOE, Bursa, parent co.)
+- Identify 15-30% energy savings through real-time emissions optimization
+- Prepare for carbon tax / CBAM exposure with auditable Scope 1-3 baselines
+
+ada-ir.com clients in Johor typically see ROI within 6 months on monitoring infrastructure.
+
+Open to a 15-min call this week to map your current reporting stack vs. new requirements?
+
+Best,
+[Your Name]
+ada-ir.com | Emissions Intelligence for Malaysia</div>
+                        </div>
+                        <div class="tab-content" id="tab-7-linkedin">
+                            <div class="template-box">Hi Mohd, saw Jaya Engineering's work in Textile in Kulai. With Malaysia's new carbon pricing and Bursa ESG mandates kicking in, a lot of Textile leaders in Johor are scrambling on emissions baselines. We're helping SME (50-200 employees) firms automate CEMS→reporting pipelines and cut energy costs 15-30%. Worth a quick chat? Happy to share a Malaysia-specific compliance checklist.</div>
+                        </div>
+                        <div class="tab-content" id="tab-7-whatsapp">
+                            <div class="template-box">Hi Mohd, [Your Name] from ada-ir.com. We help Textile companies in Johor automate emissions monitoring for Malaysia's new carbon regulations (EQA, Bursa, carbon tax). Seeing 15-30% energy savings for similar SME (50-200 employees) ops in Kulai. 10-min call worth it to see your compliance gap? I can send a 1-pager on what's changing for Textile in Malaysia.</div>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>8</td>
+                    <td><strong>Mewah Corporation</strong></td>
+                    <td>Chen Lim<br><small style="color:#8b949e">Environmental Manager</small></td>
+                    <td>Seri Manjung, Perak</td>
+                    <td>Food Processing</td>
+                    <td>SME (50-200 employees)</td>
+                    <td><span class="lead-score score-low">49</span></td>
+                    <td>4,107 tCO₂e/yr</td>
+                    <td><button class="expand-btn" onclick="toggleDetails(8)">Details ▼</button></td>
+                </tr>
+                <tr class="details" id="detail-8">
+                    <td colspan="9" class="detail-cell">
+                        <div class="detail-grid">
+                            <div class="detail-item">
+                                <div class="detail-label">Pain Point</div>
+                                <div class="detail-value">Board-level pressure to set science-based targets (SBTi)</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Email</div>
+                                <div class="detail-value">chen.lim@yahoo.com</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Phone</div>
+                                <div class="detail-value">+60 10-163 2365</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Lead Score</div>
+                                <div class="detail-value">49/100</div>
+                            </div>
+                        </div>
+                        <div class="tab-buttons">
+                            <button class="tab-btn active" onclick="showTab(8, 'email')">📧 Email</button>
+                            <button class="tab-btn" onclick="showTab(8, 'linkedin')">💼 LinkedIn</button>
+                            <button class="tab-btn" onclick="showTab(8, 'whatsapp')">💬 WhatsApp</button>
+                        </div>
+                        <div class="tab-content active" id="tab-8-email">
+                            <div class="template-box">Subject: Emissions monitoring for Mewah Corporation — Malaysia compliance & cost savings
+
+Hi Chen,
+
+I noticed Mewah Corporation operates in Food Processing in Seri Manjung — an area where Malaysia's tightening emissions regulations (EQA 1974, carbon pricing, Bursa ESG mandates) are creating both compliance urgency and cost-saving opportunities.
+
+We help Food Processing companies in Malaysia:
+- Automate CEMS data collection & regulatory reporting (DOE, Bursa, parent co.)
+- Identify 15-30% energy savings through real-time emissions optimization
+- Prepare for carbon tax / CBAM exposure with auditable Scope 1-3 baselines
+
+ada-ir.com clients in Perak typically see ROI within 6 months on monitoring infrastructure.
+
+Open to a 15-min call this week to map your current reporting stack vs. new requirements?
+
+Best,
+[Your Name]
+ada-ir.com | Emissions Intelligence for Malaysia</div>
+                        </div>
+                        <div class="tab-content" id="tab-8-linkedin">
+                            <div class="template-box">Hi Chen, saw Mewah Corporation's work in Food Processing in Seri Manjung. With Malaysia's new carbon pricing and Bursa ESG mandates kicking in, a lot of Food Processing leaders in Perak are scrambling on emissions baselines. We're helping SME (50-200 employees) firms automate CEMS→reporting pipelines and cut energy costs 15-30%. Worth a quick chat? Happy to share a Malaysia-specific compliance checklist.</div>
+                        </div>
+                        <div class="tab-content" id="tab-8-whatsapp">
+                            <div class="template-box">Hi Chen, [Your Name] from ada-ir.com. We help Food Processing companies in Perak automate emissions monitoring for Malaysia's new carbon regulations (EQA, Bursa, carbon tax). Seeing 15-30% energy savings for similar SME (50-200 employees) ops in Seri Manjung. 10-min call worth it to see your compliance gap? I can send a 1-pager on what's changing for Food Processing in Malaysia.</div>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>9</td>
+                    <td><strong>Jaya Industries</strong></td>
+                    <td>Siti Wong<br><small style="color:#8b949e">General Manager</small></td>
+                    <td>Subang Jaya, Selangor</td>
+                    <td>Electronics</td>
+                    <td>SME (50-200 employees)</td>
+                    <td><span class="lead-score score-high">79</span></td>
+                    <td>3,659 tCO₂e/yr</td>
+                    <td><button class="expand-btn" onclick="toggleDetails(9)">Details ▼</button></td>
+                </tr>
+                <tr class="details" id="detail-9">
+                    <td colspan="9" class="detail-cell">
+                        <div class="detail-grid">
+                            <div class="detail-item">
+                                <div class="detail-label">Pain Point</div>
+                                <div class="detail-value">Seeking to reduce carbon tax exposure under Malaysia's upcoming carbon pricing mechanism</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Email</div>
+                                <div class="detail-value">siti.wong@gmail.com</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Phone</div>
+                                <div class="detail-value">+60 12-912 5505</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Lead Score</div>
+                                <div class="detail-value">79/100</div>
+                            </div>
+                        </div>
+                        <div class="tab-buttons">
+                            <button class="tab-btn active" onclick="showTab(9, 'email')">📧 Email</button>
+                            <button class="tab-btn" onclick="showTab(9, 'linkedin')">💼 LinkedIn</button>
+                            <button class="tab-btn" onclick="showTab(9, 'whatsapp')">💬 WhatsApp</button>
+                        </div>
+                        <div class="tab-content active" id="tab-9-email">
+                            <div class="template-box">Subject: Emissions monitoring for Jaya Industries — Malaysia compliance & cost savings
+
+Hi Siti,
+
+I noticed Jaya Industries operates in Electronics in Subang Jaya — an area where Malaysia's tightening emissions regulations (EQA 1974, carbon pricing, Bursa ESG mandates) are creating both compliance urgency and cost-saving opportunities.
+
+We help Electronics companies in Malaysia:
+- Automate CEMS data collection & regulatory reporting (DOE, Bursa, parent co.)
+- Identify 15-30% energy savings through real-time emissions optimization
+- Prepare for carbon tax / CBAM exposure with auditable Scope 1-3 baselines
+
+ada-ir.com clients in Selangor typically see ROI within 6 months on monitoring infrastructure.
+
+Open to a 15-min call this week to map your current reporting stack vs. new requirements?
+
+Best,
+[Your Name]
+ada-ir.com | Emissions Intelligence for Malaysia</div>
+                        </div>
+                        <div class="tab-content" id="tab-9-linkedin">
+                            <div class="template-box">Hi Siti, saw Jaya Industries's work in Electronics in Subang Jaya. With Malaysia's new carbon pricing and Bursa ESG mandates kicking in, a lot of Electronics leaders in Selangor are scrambling on emissions baselines. We're helping SME (50-200 employees) firms automate CEMS→reporting pipelines and cut energy costs 15-30%. Worth a quick chat? Happy to share a Malaysia-specific compliance checklist.</div>
+                        </div>
+                        <div class="tab-content" id="tab-9-whatsapp">
+                            <div class="template-box">Hi Siti, [Your Name] from ada-ir.com. We help Electronics companies in Selangor automate emissions monitoring for Malaysia's new carbon regulations (EQA, Bursa, carbon tax). Seeing 15-30% energy savings for similar SME (50-200 employees) ops in Subang Jaya. 10-min call worth it to see your compliance gap? I can send a 1-pager on what's changing for Electronics in Malaysia.</div>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>10</td>
+                    <td><strong>Sri Corporation</strong></td>
+                    <td>David Kumar<br><small style="color:#8b949e">Facilities Manager</small></td>
+                    <td>Sandakan, Sabah</td>
+                    <td>Manufacturing</td>
+                    <td>Large Enterprise (>1000 employees)</td>
+                    <td><span class="lead-score score-low">45</span></td>
+                    <td>142,588 tCO₂e/yr</td>
+                    <td><button class="expand-btn" onclick="toggleDetails(10)">Details ▼</button></td>
+                </tr>
+                <tr class="details" id="detail-10">
+                    <td colspan="9" class="detail-cell">
+                        <div class="detail-grid">
+                            <div class="detail-item">
+                                <div class="detail-label">Pain Point</div>
+                                <div class="detail-value">ESG reporting requirements from parent company or investors</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Email</div>
+                                <div class="detail-value">david.kumar@outlook.com</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Phone</div>
+                                <div class="detail-value">+60 12-444 9112</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Lead Score</div>
+                                <div class="detail-value">45/100</div>
+                            </div>
+                        </div>
+                        <div class="tab-buttons">
+                            <button class="tab-btn active" onclick="showTab(10, 'email')">📧 Email</button>
+                            <button class="tab-btn" onclick="showTab(10, 'linkedin')">💼 LinkedIn</button>
+                            <button class="tab-btn" onclick="showTab(10, 'whatsapp')">💬 WhatsApp</button>
+                        </div>
+                        <div class="tab-content active" id="tab-10-email">
+                            <div class="template-box">Subject: Emissions monitoring for Sri Corporation — Malaysia compliance & cost savings
+
+Hi David,
+
+I noticed Sri Corporation operates in Manufacturing in Sandakan — an area where Malaysia's tightening emissions regulations (EQA 1974, carbon pricing, Bursa ESG mandates) are creating both compliance urgency and cost-saving opportunities.
+
+We help Manufacturing companies in Malaysia:
+- Automate CEMS data collection & regulatory reporting (DOE, Bursa, parent co.)
+- Identify 15-30% energy savings through real-time emissions optimization
+- Prepare for carbon tax / CBAM exposure with auditable Scope 1-3 baselines
+
+ada-ir.com clients in Sabah typically see ROI within 6 months on monitoring infrastructure.
+
+Open to a 15-min call this week to map your current reporting stack vs. new requirements?
+
+Best,
+[Your Name]
+ada-ir.com | Emissions Intelligence for Malaysia</div>
+                        </div>
+                        <div class="tab-content" id="tab-10-linkedin">
+                            <div class="template-box">Hi David, saw Sri Corporation's work in Manufacturing in Sandakan. With Malaysia's new carbon pricing and Bursa ESG mandates kicking in, a lot of Manufacturing leaders in Sabah are scrambling on emissions baselines. We're helping Large Enterprise (>1000 employees) firms automate CEMS→reporting pipelines and cut energy costs 15-30%. Worth a quick chat? Happy to share a Malaysia-specific compliance checklist.</div>
+                        </div>
+                        <div class="tab-content" id="tab-10-whatsapp">
+                            <div class="template-box">Hi David, [Your Name] from ada-ir.com. We help Manufacturing companies in Sabah automate emissions monitoring for Malaysia's new carbon regulations (EQA, Bursa, carbon tax). Seeing 15-30% energy savings for similar Large Enterprise (>1000 employees) ops in Sandakan. 10-min call worth it to see your compliance gap? I can send a 1-pager on what's changing for Manufacturing in Malaysia.</div>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="footer">
+            <p>Generated by ada-ir.com lead automation | Hermes Agent cronjob</p>
+            <p>Target: Malaysia emissions monitoring market | <a href="https://ada-ir.com" style="color:#58a6ff">ada-ir.com</a></p>
+        </div>
+    </div>
+
+    <script>
+        function toggleDetails(id) {
+            const row = document.getElementById('detail-' + id);
+            const btn = row.previousElementSibling.querySelector('.expand-btn');
+            row.classList.toggle('open');
+            btn.textContent = row.classList.contains('open') ? 'Details ▲' : 'Details ▼';
         }
-
-        // Animate back
-        swipeRow.style.transition = 'transform 0.2s, opacity 0.2s';
-        swipeRow.style.transform = 'translateX(0)';
-        swipeRow.style.opacity = '1';
-      } else {
-        // Snap back
-        swipeRow.style.transition = 'transform 0.2s, opacity 0.2s';
-        swipeRow.style.transform = 'translateX(0)';
-        swipeRow.style.opacity = '1';
-      }
-
-      setTimeout(() => {
-        swipeRow.style.transition = '';
-        swipeRow.classList.remove('swiping');
-        swipeRow = null;
-        swipeStartX = 0;
-        swipeCurrentX = 0;
-      }, 200);
-    }
-
-    // ===== MODAL =====
-    let modalLeadIndex = -1;
-
-    function openModal(index) {
-      modalLeadIndex = index;
-      const lead = LEADS[index];
-      const templates = getTemplates(lead);
-
-      document.getElementById('modalCompany').textContent = lead.company;
-      document.getElementById('modalSector').textContent = lead.sector;
-      document.getElementById('modalSector').className = 'modal-sector sector-badge ' + (sectorClassMap[lead.sector] || '');
-      document.getElementById('modalLocation').textContent = lead.location;
-      document.getElementById('modalEmail').innerHTML = `<a href="mailto:${escapeHtml(lead.email)}">${escapeHtml(lead.email)}</a>`;
-      document.getElementById('modalPhone').innerHTML = `<a href="tel:${escapeHtml(lead.phone)}">${escapeHtml(lead.phone)}</a>`;
-      document.getElementById('modalPainPoint').textContent = lead.painPoint;
-      document.getElementById('modalEmissions').textContent = lead.emissions + ' tCO₂e/yr';
-      document.getElementById('modalScore').textContent = lead.score + '/100';
-
-      const statusSelect = document.getElementById('modalStatus');
-      statusSelect.innerHTML = STATUS_OPTIONS.map(opt =>
-        `<option value="${opt}" ${opt === lead.status ? 'selected' : ''}>${opt}</option>`
-      ).join('');
-      statusSelect.value = lead.status;
-      statusSelect.dataset.index = index;
-
-      document.getElementById('templateEmail').textContent = templates.email;
-      document.getElementById('templateLinkedin').textContent = templates.linkedin;
-      document.getElementById('templateWhatsapp').textContent = templates.whatsapp;
-
-      document.getElementById('modalOverlay').classList.add('open');
-      document.getElementById('modalSheet').classList.add('open');
-      document.getElementById('modalOverlay').setAttribute('aria-hidden', 'false');
-      document.getElementById('modalSheet').setAttribute('aria-hidden', 'false');
-      document.body.style.overflow = 'hidden';
-
-      // Focus trap
-      setTimeout(() => statusSelect.focus(), 100);
-    }
-
-    function closeModal() {
-      document.getElementById('modalOverlay').classList.remove('open');
-      document.getElementById('modalSheet').classList.remove('open');
-      document.getElementById('modalOverlay').setAttribute('aria-hidden', 'true');
-      document.getElementById('modalSheet').setAttribute('aria-hidden', 'true');
-      document.body.style.overflow = '';
-      modalLeadIndex = -1;
-    }
-
-    document.getElementById('modalOverlay').addEventListener('click', closeModal);
-    document.getElementById('modalClose').addEventListener('click', closeModal);
-
-    document.getElementById('modalStatus').addEventListener('change', e => {
-      const index = parseInt(e.target.dataset.index, 10);
-      LEADS[index].status = e.target.value;
-      handleStatusChange({ target: { dataset: { index }, value: e.target.value } });
-    });
-
-    // Tab switching
-    document.querySelectorAll('.modal-tab').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.modal-tab').forEach(b => {
-          b.classList.remove('active');
-          b.setAttribute('aria-selected', 'false');
-        });
-        document.querySelectorAll('.modal-tab-panel').forEach(p => p.classList.remove('active'));
-
-        btn.classList.add('active');
-        btn.setAttribute('aria-selected', 'true');
-        document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
-      });
-    });
-
-    // Copy buttons for outreach templates
-    function fallbackCopyText(text) {
-      const textarea = document.createElement('textarea');
-      textarea.value = text;
-      textarea.setAttribute('readonly', '');
-      textarea.style.position = 'fixed';
-      textarea.style.left = '-9999px';
-      textarea.style.top = '0';
-      document.body.appendChild(textarea);
-      textarea.select();
-      textarea.setSelectionRange(0, textarea.value.length);
-      const ok = document.execCommand('copy');
-      document.body.removeChild(textarea);
-      return ok;
-    }
-
-    async function copyTemplate(button) {
-      const targetId = button.dataset.copyTarget;
-      const target = document.getElementById(targetId);
-      const text = target ? target.textContent.trim() : '';
-      if (!text) return;
-
-      const originalText = button.textContent;
-      try {
-        if (navigator.clipboard && window.isSecureContext) {
-          await navigator.clipboard.writeText(text);
-        } else {
-          const copied = fallbackCopyText(text);
-          if (!copied) throw new Error('Fallback copy failed');
+        function showTab(leadId, tab) {
+            document.querySelectorAll('#tab-' + leadId + ' .tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('#tab-' + leadId + ' .tab-content').forEach(c => c.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById('tab-' + leadId + '-' + tab).classList.add('active');
         }
-        button.textContent = 'Copied!';
-        button.classList.add('copied');
-        vibrate(10);
-      } catch (err) {
-        button.textContent = 'Copy failed';
-      }
-
-      setTimeout(() => {
-        button.textContent = originalText;
-        button.classList.remove('copied');
-      }, 1400);
-    }
-
-    document.querySelectorAll('.copy-template-btn').forEach(button => {
-      button.addEventListener('click', e => {
-        e.preventDefault();
-        e.stopPropagation();
-        copyTemplate(button);
-      });
-    });
-
-    // Escape key closes modal
-    document.addEventListener('keydown', e => {
-      if (e.key === 'Escape' && document.getElementById('modalSheet').classList.contains('open')) {
-        closeModal();
-      }
-    });
-
-    // ===== EXPORT CSV =====
-    function exportCsv() {
-      const headers = ['#', 'Company', 'Sector', 'Location', 'Status', 'Email', 'Phone', 'Pain Point', 'Est. Emissions (tCO₂e/yr)', 'Lead Score'];
-      const rows = LEADS.map((lead, i) => [
-        i + 1, lead.company, lead.sector, lead.location, lead.status,
-        lead.email, lead.phone, lead.painPoint, lead.emissions, lead.score
-      ]);
-
-      const csvContent = [headers, ...rows]
-        .map(row => row.map(escapeCsv).join(','))
-        .join('\n');
-
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'ada-ir-leads.csv';
-      a.click();
-      URL.revokeObjectURL(url);
-
-      vibrate(20);
-    }
-
-    document.getElementById('exportBtn').addEventListener('click', exportCsv);
-
-    // ===== SEARCH =====
-    document.getElementById('searchInput').addEventListener('input', e => {
-      renderLeads(e.target.value);
-    });
-
-    // ===== PULL TO REFRESH =====
-    let pullStartY = 0;
-    let pullCurrentY = 0;
-    let pullActive = false;
-    const pullEl = document.getElementById('pullToRefresh');
-    const pullText = document.getElementById('pullText');
-
-    document.addEventListener('touchstart', e => {
-      if (window.scrollY === 0 && e.touches.length === 1) {
-        pullStartY = e.touches[0].clientY;
-        pullActive = true;
-      }
-    }, { passive: true });
-
-    document.addEventListener('touchmove', e => {
-      if (!pullActive) return;
-      pullCurrentY = e.touches[0].clientY;
-      const deltaY = pullCurrentY - pullStartY;
-
-      if (deltaY > 0 && deltaY < 100) {
-        e.preventDefault();
-        pullEl.classList.add('visible');
-        pullEl.style.transform = `translateY(${Math.min(deltaY * 0.5, 30)}px)`;
-
-        if (deltaY > 60) {
-          pullText.textContent = 'Release to refresh';
-          pullEl.classList.add('refreshing');
-        } else {
-          pullText.textContent = 'Pull to refresh';
-          pullEl.classList.remove('refreshing');
-        }
-      }
-    }, { passive: false });
-
-    document.addEventListener('touchend', () => {
-      if (!pullActive) return;
-      pullActive = false;
-
-      if (pullCurrentY - pullStartY > 60) {
-        pullText.textContent = 'Refreshing...';
-        pullEl.classList.add('refreshing');
-
-        setTimeout(() => {
-          renderLeads(document.getElementById('searchInput').value);
-          pullText.textContent = 'Refreshed';
-          setTimeout(() => {
-            pullEl.classList.remove('visible', 'refreshing');
-            pullText.textContent = 'Pull to refresh';
-          }, 800);
-        }, 500);
-      } else {
-        pullEl.classList.remove('visible', 'refreshing');
-        pullText.textContent = 'Pull to refresh';
-      }
-      pullEl.style.transform = '';
-    });
-
-    // ===== TWEAKS PANEL =====
-    const tweaksBtn = document.getElementById('tweaksBtn');
-    const tweaksPanel = document.getElementById('tweaksPanel');
-    const tweakTheme = document.getElementById('tweakTheme');
-    const themeToggleBtn = document.getElementById('themeToggleBtn');
-    const tweakDensity = document.getElementById('tweakDensity');
-    const tweakMotion = document.getElementById('tweakMotion');
-    const tweakHaptics = document.getElementById('tweakHaptics');
-
-    tweaksBtn.addEventListener('click', () => {
-      const isOpen = tweaksPanel.classList.toggle('open');
-      tweaksBtn.setAttribute('aria-expanded', isOpen);
-    });
-
-    document.addEventListener('click', e => {
-      if (!tweaksPanel.contains(e.target) && e.target !== tweaksBtn) {
-        tweaksPanel.classList.remove('open');
-        tweaksBtn.setAttribute('aria-expanded', 'false');
-      }
-    });
-
-    // Theme
-    function applyTheme(theme) {
-      document.documentElement.setAttribute('data-theme', theme);
-      localStorage.setItem('tweakTheme', theme);
-      if (tweakTheme) tweakTheme.value = theme;
-      if (themeToggleBtn) {
-        const darkActive = theme === 'dark';
-        themeToggleBtn.textContent = darkActive ? '☀️ Light Mode' : '🌙 Dark Mode';
-        themeToggleBtn.setAttribute('aria-pressed', darkActive ? 'true' : 'false');
-      }
-    }
-
-    tweakTheme.addEventListener('change', () => {
-      applyTheme(tweakTheme.value);
-    });
-
-    themeToggleBtn.addEventListener('click', () => {
-      const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
-      applyTheme(currentTheme === 'dark' ? 'light' : 'dark');
-    });
-
-    // Density
-    tweakDensity.addEventListener('change', () => {
-      document.documentElement.setAttribute('data-density', tweakDensity.value);
-      localStorage.setItem('tweakDensity', tweakDensity.value);
-    });
-
-    // Motion
-    tweakMotion.addEventListener('change', () => {
-      document.documentElement.classList.toggle('reduce-motion', !tweakMotion.checked);
-      localStorage.setItem('tweakMotion', tweakMotion.checked);
-    });
-
-    // Restore tweaks
-    const savedTheme = localStorage.getItem('tweakTheme') || 'light';
-    const savedDensity = localStorage.getItem('tweakDensity') || 'comfortable';
-    const savedMotion = localStorage.getItem('tweakMotion') !== 'false';
-
-    tweakTheme.value = savedTheme;
-    tweakDensity.value = savedDensity;
-    tweakMotion.checked = savedMotion;
-    applyTheme(savedTheme);
-    document.documentElement.setAttribute('data-density', savedDensity);
-    if (!savedMotion) document.documentElement.classList.add('reduce-motion');
-
-    // ===== INIT =====
-    // Initialize modal to closed state by default
-    closeModal();
-    renderLeads();
-  </script>
+    </script>
 </body>
 </html>
