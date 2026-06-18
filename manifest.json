@@ -1,8 +1,8 @@
 {
   "name": "ADA-IR Leads Tracker",
   "short_name": "ADA-IR Leads",
-  "start_url": "/ada-ir-leads/",
-  "scope": "/ada-ir-leads/",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#f8fafc",
   "theme_color": "#0b74de",
