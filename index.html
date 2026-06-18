@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <link rel="manifest" href="/ada-ir-leads/manifest.json">
-  <meta name="theme-color" content="#0b74de">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0b74de">
   <title>ADA-IR Leads Tracker</title>
   <style>
     :root {
@@ -800,20 +800,6 @@
   </div>
 
   <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/ada-ir-leads/service-worker.js').catch((error) => {
-        console.warn('ServiceWorker registration failed', error);
-      });
-    }
-
-    (function registerNotifications() {
-      if (!('Notification' in window)) return;
-      if (Notification.permission === 'granted') return;
-      if (Notification.permission !== 'denied') {
-        Notification.requestPermission();
-      }
-    })();
-  </script>
     // ===== DATA =====
     const LEADS = [
       { company: "Malayan Cement (YTL Cement)", sector: "Cement", location: "Kuala Lumpur", status: "New", email: "contact@malayancement.com.my", phone: "+60 3-2282 8888", painPoint: "Need to comply with Malaysia's Environmental Quality Act 1974 amendments", emissions: "1,250,000", score: 85 },
@@ -1369,6 +1355,20 @@ ada-ir.com | Emissions Intelligence for Malaysia`,
     // Initialize modal to closed state by default
     closeModal();
     renderLeads();
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js').catch((error) => {
+        console.warn('ServiceWorker registration failed', error);
+      });
+    }
+
+    (function registerNotifications() {
+      if (!('Notification' in window)) return;
+      if (Notification.permission === 'granted') return;
+      if (Notification.permission !== 'denied') {
+        Notification.requestPermission();
+      }
+    })();
   </script>
 </body>
 </html>
