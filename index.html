@@ -799,7 +799,7 @@
 
   <script>
     // ===== DATA =====
-    const LEADS = [
+    const DEFAULT_LEADS = [
       { company: "Malayan Cement (YTL Cement)", sector: "Cement", location: "Kuala Lumpur", status: "New", email: "contact@malayancement.com.my", phone: "+60 3-2282 8888", painPoint: "Need to comply with Malaysia's Environmental Quality Act 1974 amendments", emissions: "1,250,000", score: 85 },
       { company: "Hume Cement", sector: "Cement", location: "Gopeng, Perak", status: "New", email: "info@humecement.com", phone: "+60 5-351 8888", painPoint: "Preparing for mandatory carbon reporting under Bursa Malaysia sustainability requirements", emissions: "980,000", score: 78 },
       { company: "CIMA Cement", sector: "Cement", location: "Keramat Pulai, Perak", status: "New", email: "sales@cimacement.com", phone: "+60 5-377 8888", painPoint: "Seeking to reduce carbon tax exposure under Malaysia's upcoming carbon pricing mechanism", emissions: "890,000", score: 72 },
@@ -821,6 +821,90 @@
       { company: "Scientex", sector: "Petrochemical", location: "Shah Alam, Selangor", status: "New", email: "contact@scientex.com.my", phone: "+60 3-5191 8888", painPoint: "Require third-party verification for sustainability certifications (MSPO, RSPO, ISO 14064)", emissions: "980,000", score: 79 },
       { company: "Scomi Group", sector: "Petrochemical", location: "Kuala Lumpur", status: "New", email: "info@scomigroup.com", phone: "+60 3-2163 8888", painPoint: "Board-level pressure to set science-based targets (SBTi)", emissions: "720,000", score: 74 },
     ];
+
+    const STORAGE_KEY = 'ada-ir-leads-state-v1';
+    const DAILY_TSV_BASE = './run-logs/';
+
+    let LEADS = [];
+    let overrideStatuses = {};
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          overrideStatuses = parsed.statuses || {};
+          LEADS = parsed.leads || DEFAULT_LEADS.slice();
+        } else {
+          LEADS = DEFAULT_LEADS.slice();
+        }
+      } catch (e) {
+        LEADS = DEFAULT_LEADS.slice();
+        overrideStatuses = {};
+      }
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        leads: LEADS,
+        statuses: overrideStatuses,
+      }));
+    }
+
+    function parseTsv(text) {
+      const lines = text.trim().split(/\r?\n/);
+      if (lines.length < 2) return [];
+      const headers = lines[0].split('\t').map(h => h.trim().toLowerCase());
+      const out = [];
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split('\t');
+        if (!cols.length) continue;
+        const obj = {};
+        headers.forEach((h, idx) => {
+          const val = (cols[idx] || '').trim();
+          if (h === 'company') obj.company = val;
+          else if (h === 'sector') obj.sector = val;
+          else if (h === 'location') obj.location = val;
+          else if (h === 'status') obj.status = val || 'New';
+          else if (h === 'email') obj.email = val || '';
+          else if (h === 'phone') obj.phone = val || '';
+          else if (h === 'painPoint') obj.painPoint = val || '';
+          else if (h === 'emissions') obj.emissions = val || '';
+          else if (h === 'score') obj.score = val || '';
+        });
+        if (obj.company) out.push(obj);
+      }
+      return out;
+    }
+
+    async function fetchLatestDailyLeads() {
+      try {
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        const target = `${DAILY_TSV_BASE}${yyyy}-${mm}-${dd}.leads.tsv`;
+        const res = await fetch(target, { cache: 'no-store' });
+        if (!res.ok) return false;
+        const text = await res.text();
+        const daily = parseTsv(text);
+        if (!daily.length) return false;
+        LEADS = daily;
+        saveState();
+        return true;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    async function initLeads() {
+      loadState();
+      const ok = await fetchLatestDailyLeads();
+      if (!ok) {
+        // If fetch fails, keep current LEADS from storage/default.
+        if (!LEADS.length) LEADS = DEFAULT_LEADS.slice();
+      }
+    }
 
     const STATUS_OPTIONS = ["New", "Contacted", "Qualified", "Proposal", "Won", "Lost"];
     const STATUS_COLORS = {
@@ -1352,7 +1436,9 @@ ada-ir.com | Emissions Intelligence for Malaysia`,
     // ===== INIT =====
     // Initialize modal to closed state by default
     closeModal();
-    renderLeads();
+    initLeads().then(() => {
+      renderLeads(document.getElementById('searchInput').value);
+    });
   </script>
 </body>
 </html>
