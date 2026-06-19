@@ -799,37 +799,6 @@
 
   <script>
     // ===== DATA =====
-        </script>
-    <script>
-      let deferredPrompt = null;
-      const installBtn = document.createElement('button');
-      installBtn.className = 'export-btn';
-      installBtn.id = 'installBtn';
-      installBtn.type = 'button';
-      installBtn.ariaLabel = 'Install app';
-      installBtn.textContent = 'Install App';
-      installBtn.style.display = 'none';
-
-      window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-        installBtn.style.display = '';
-        document.getElementById('headerEnd').appendChild(installBtn);
-      });
-
-      installBtn.addEventListener('click', async () => {
-        if (!deferredPrompt) return;
-        deferredPrompt.prompt();
-        deferredPrompt = null;
-        installBtn.style.display = 'none';
-      });
-
-      window.addEventListener('appinstalled', () => {
-        installBtn.style.display = 'none';
-        deferredPrompt = null;
-      });
-    </script>
-    <script>
     const LEADS = [
       { company: "Malayan Cement (YTL Cement)", sector: "Cement", location: "Kuala Lumpur", status: "New", email: "contact@malayancement.com.my", phone: "+60 3-2282 8888", painPoint: "Need to comply with Malaysia's Environmental Quality Act 1974 amendments", emissions: "1,250,000", score: 85 },
       { company: "Hume Cement", sector: "Cement", location: "Gopeng, Perak", status: "New", email: "info@humecement.com", phone: "+60 5-351 8888", painPoint: "Preparing for mandatory carbon reporting under Bursa Malaysia sustainability requirements", emissions: "980,000", score: 78 },
