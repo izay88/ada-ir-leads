@@ -799,33 +799,28 @@
 
   <script>
     // ===== DATA =====
-    const DEFAULT_LEADS = [
+    const LEADS = [
       { company: "Malayan Cement (YTL Cement)", sector: "Cement", location: "Kuala Lumpur", status: "New", email: "contact@malayancement.com.my", phone: "+60 3-2282 8888", painPoint: "Need to comply with Malaysia's Environmental Quality Act 1974 amendments", emissions: "1,250,000", score: 85 },
-      - obj.dateAdded = '2025-06-15';
-      + obj.dateAdded = '2025-06-15';
-      + obj.scope = 'Local observability; stack traces; dashboards';
-      @@
-      -{ company: "CIMA", sector: "Cement", ... },
-      +{ company: "CIMA", sector: "Cement", ... },
-           ];
-      -    let LEADS = [];
-      -    let overrideStatuses = {};
-      -    let leadsLoaded = false;
-      +    let LEADS = [];
-      +    let overrideStatuses = {};
-      +    let leadsLoaded = false;
-           function loadState() { ... }
-      -    async function initLeads() { }
-      +    async function initLeads() {
-      +      loadState();
-      +      const ok = await fetchLatestDailyLeads();
-      +      if (!ok) {
-      +        const regen = regenerateDefaultLeads();
-      +        LEADS = regen.map(l => ({ ...l, status: overrideStatuses[l.company] || 'New' }));
-      +        saveState();
-      +      }
-      -
-    }
+      { company: "Hume Cement", sector: "Cement", location: "Gopeng, Perak", status: "New", email: "info@humecement.com", phone: "+60 5-351 8888", painPoint: "Preparing for mandatory carbon reporting under Bursa Malaysia sustainability requirements", emissions: "980,000", score: 78 },
+      { company: "CIMA Cement", sector: "Cement", location: "Keramat Pulai, Perak", status: "New", email: "sales@cimacement.com", phone: "+60 5-377 8888", painPoint: "Seeking to reduce carbon tax exposure under Malaysia's upcoming carbon pricing mechanism", emissions: "890,000", score: 72 },
+      { company: "Tasek Cement", sector: "Cement", location: "Ipoh, Perak", status: "New", email: "contact@tasekcement.com", phone: "+60 5-242 8888", painPoint: "Client/export market demands for Scope 1, 2, 3 emissions transparency", emissions: "1,100,000", score: 88 },
+      { company: "Southern Steel (Hong Leong)", sector: "Steel", location: "Prai, Penang", status: "New", email: "info@southernsteel.com", phone: "+60 4-398 8888", painPoint: "ESG reporting requirements from parent company or investors", emissions: "650,000", score: 82 },
+      { company: "Perwaja Steel", sector: "Steel", location: "Kemaman, Terengganu", status: "New", email: "contact@perwaja.com.my", phone: "+60 9-863 8888", painPoint: "Optimizing energy costs through emissions monitoring and reduction", emissions: "720,000", score: 75 },
+      { company: "Mega Steel", sector: "Steel", location: "Banting, Selangor", status: "New", email: "sales@megasteel.com.my", phone: "+60 3-3179 8888", painPoint: "Need real-time CEMS data integration", emissions: "580,000", score: 70 },
+      { company: "Fletcher Steel", sector: "Steel", location: "Shah Alam, Selangor", status: "New", email: "info@fletchersteel.com", phone: "+60 3-5542 8888", painPoint: "Struggling with manual spreadsheet-based emissions tracking", emissions: "450,000", score: 68 },
+      { company: "FGV Holdings", sector: "Palm Oil", location: "Kuala Lumpur", status: "New", email: "contact@fgvholdings.com", phone: "+60 3-2052 8888", painPoint: "Require third-party verification for sustainability certifications (MSPO, RSPO, ISO 14064)", emissions: "380,000", score: 86 },
+      { company: "Sime Darby Plantation", sector: "Palm Oil", location: "Ara Damansara, Selangor", status: "New", email: "info@simedarbyplantation.com", phone: "+60 3-7848 8888", painPoint: "Board-level pressure to set science-based targets (SBTi)", emissions: "1,450,000", score: 92 },
+      { company: "IOI Corporation", sector: "Palm Oil", location: "Putrajaya", status: "New", email: "contact@ioigroup.com", phone: "+60 3-8947 8888", painPoint: "Need to comply with Malaysia's Environmental Quality Act 1974 amendments", emissions: "1,200,000", score: 89 },
+      { company: "Kuala Lumpur Kepong (KLK)", sector: "Palm Oil", location: "Kuala Lumpur", status: "New", email: "info@klk.com.my", phone: "+60 3-2164 8888", painPoint: "Preparing for mandatory carbon reporting under Bursa Malaysia sustainability requirements", emissions: "980,000", score: 84 },
+      { company: "Genting Plantations", sector: "Palm Oil", location: "Kuala Lumpur", status: "New", email: "contact@gentingplantations.com", phone: "+60 3-2178 8888", painPoint: "Seeking to reduce carbon tax exposure under Malaysia's upcoming carbon pricing mechanism", emissions: "670,000", score: 76 },
+      { company: "TDM Berhad", sector: "Palm Oil", location: "Kuala Terengganu", status: "New", email: "info@tdmberhad.com.my", phone: "+60 9-624 8888", painPoint: "Client/export market demands for Scope 1, 2, 3 emissions transparency", emissions: "540,000", score: 71 },
+      { company: "Petronas Chemicals", sector: "Petrochemical", location: "Kuala Lumpur", status: "New", email: "contact@petronaschemicals.com.my", phone: "+60 3-2052 8888", painPoint: "ESG reporting requirements from parent company or investors", emissions: "2,100,000", score: 94 },
+      { company: "BASF Petronas Chemicals", sector: "Petrochemical", location: "Gebeng, Pahang", status: "New", email: "info@basfpetronas.com", phone: "+60 9-583 8888", painPoint: "Optimizing energy costs through emissions monitoring and reduction", emissions: "1,850,000", score: 90 },
+      { company: "PETRONAS Dagangan", sector: "Petrochemical", location: "Kuala Lumpur", status: "New", email: "contact@petronasdagangan.com.my", phone: "+60 3-2052 8888", painPoint: "Need real-time CEMS data integration", emissions: "1,650,000", score: 88 },
+      { company: "Lotte Chemical Titan", sector: "Petrochemical", location: "Pasir Gudang, Johor", status: "New", email: "info@lottechemicaltitan.com", phone: "+60 7-251 8888", painPoint: "Struggling with manual spreadsheet-based emissions tracking", emissions: "1,320,000", score: 83 },
+      { company: "Scientex", sector: "Petrochemical", location: "Shah Alam, Selangor", status: "New", email: "contact@scientex.com.my", phone: "+60 3-5191 8888", painPoint: "Require third-party verification for sustainability certifications (MSPO, RSPO, ISO 14064)", emissions: "980,000", score: 79 },
+      { company: "Scomi Group", sector: "Petrochemical", location: "Kuala Lumpur", status: "New", email: "info@scomigroup.com", phone: "+60 3-2163 8888", painPoint: "Board-level pressure to set science-based targets (SBTi)", emissions: "720,000", score: 74 },
+    ];
 
     const STATUS_OPTIONS = ["New", "Contacted", "Qualified", "Proposal", "Won", "Lost"];
     const STATUS_COLORS = {
@@ -1357,9 +1352,7 @@ ada-ir.com | Emissions Intelligence for Malaysia`,
     // ===== INIT =====
     // Initialize modal to closed state by default
     closeModal();
-    initLeads().then(() => {
-      renderLeads(document.getElementById('searchInput').value);
-    });
+    renderLeads();
   </script>
 </body>
 </html>
